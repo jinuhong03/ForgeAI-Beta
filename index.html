@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cycle Log">
+  <meta name="theme-color" content="#1B1A18">
+  <title>Cycle Log</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { min-height: 100%; background: #1B1A18; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("sw.js").catch(function() {});
+      });
+    }
+  </script>
+  <script>
+const { useState, useEffect, useMemo } = React;
+function PlusIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "5", x2: "12", y2: "19" }), /* @__PURE__ */ React.createElement("line", { x1: "5", y1: "12", x2: "19", y2: "12" }));
+}
+function TrashIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("path", { d: "M3 6h18" }), /* @__PURE__ */ React.createElement("path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" }), /* @__PURE__ */ React.createElement("path", { d: "M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" }), /* @__PURE__ */ React.createElement("line", { x1: "10", y1: "11", x2: "10", y2: "17" }), /* @__PURE__ */ React.createElement("line", { x1: "14", y1: "11", x2: "14", y2: "17" }));
+}
+function ChevronDownIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("polyline", { points: "6 9 12 15 18 9" }));
+}
+function ChevronUpIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("polyline", { points: "18 15 12 9 6 15" }));
+}
+function DumbbellIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("rect", { x: "2", y: "9", width: "4", height: "6", rx: "1" }), /* @__PURE__ */ React.createElement("rect", { x: "18", y: "9", width: "4", height: "6", rx: "1" }), /* @__PURE__ */ React.createElement("line", { x1: "6", y1: "12", x2: "18", y2: "12" }), /* @__PURE__ */ React.createElement("line", { x1: "9", y1: "8", x2: "9", y2: "16" }), /* @__PURE__ */ React.createElement("line", { x1: "15", y1: "8", x2: "15", y2: "16" }));
+}
+function UtensilsIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("path", { d: "M6 2v7a2 2 0 0 0 4 0V2" }), /* @__PURE__ */ React.createElement("line", { x1: "8", y1: "9", x2: "8", y2: "22" }), /* @__PURE__ */ React.createElement("path", { d: "M17 2c-2 3-2 6 0 9s2 6 0 11" }));
+}
+function TrendingUpIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("polyline", { points: "3 17 9 11 13 15 21 7" }), /* @__PURE__ */ React.createElement("polyline", { points: "14 7 21 7 21 14" }));
+}
+function CheckIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("polyline", { points: "20 6 9 17 4 12" }));
+}
+function InfoIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "10" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "16", x2: "12", y2: "12" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "8", x2: "12.01", y2: "8" }));
+}
+function SparkleIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("path", { d: "M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z" }), /* @__PURE__ */ React.createElement("path", { d: "M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z" }));
+}
+function UserIcon({ size = 20, className = "" }) {
+  return /* @__PURE__ */ React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className }, /* @__PURE__ */ React.createElement("path", { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }), /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "7", r: "4" }));
+}
+function SimpleLineChart({ data, height = 180 }) {
+  const VW = 300;
+  const VH = 140;
+  const PAD_L = 6;
+  const PAD_R = 6;
+  const PAD_T = 10;
+  const PAD_B = 22;
+  const plotW = VW - PAD_L - PAD_R;
+  const plotH = VH - PAD_T - PAD_B;
+  const values = data.flatMap((d) => [d.weight, d.avg]).filter((v) => typeof v === "number" && !isNaN(v));
+  const minV = values.length ? Math.min(...values) : 0;
+  const maxV = values.length ? Math.max(...values) : 1;
+  const range = maxV - minV || 1;
+  function yFor(v) {
+    return PAD_T + plotH - (v - minV) / range * plotH;
+  }
+  function xFor(i) {
+    return data.length <= 1 ? PAD_L : PAD_L + i / (data.length - 1) * plotW;
+  }
+  const weightPts = data.map((d, i) => `${xFor(i)},${yFor(d.weight)}`).join(" ");
+  const avgPts = data.map((d, i) => `${xFor(i)},${yFor(d.avg)}`).join(" ");
+  return /* @__PURE__ */ React.createElement("svg", { width: "100%", height, viewBox: `0 0 ${VW} ${VH}`, preserveAspectRatio: "none" }, /* @__PURE__ */ React.createElement("line", { x1: PAD_L, y1: PAD_T, x2: VW - PAD_R, y2: PAD_T, stroke: "var(--line)", strokeWidth: "1" }), /* @__PURE__ */ React.createElement("line", { x1: PAD_L, y1: VH - PAD_B, x2: VW - PAD_R, y2: VH - PAD_B, stroke: "var(--line)", strokeWidth: "1" }), /* @__PURE__ */ React.createElement("polyline", { points: weightPts, fill: "none", stroke: "var(--ink-muted)", strokeWidth: "1.5" }), /* @__PURE__ */ React.createElement("polyline", { points: avgPts, fill: "none", stroke: "var(--sage)", strokeWidth: "2.5" }), data.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("text", { x: PAD_L, y: VH - 6, fontSize: "8", fill: "var(--ink-muted)" }, data[0].date), /* @__PURE__ */ React.createElement("text", { x: VW - PAD_R, y: VH - 6, fontSize: "8", fill: "var(--ink-muted)", textAnchor: "end" }, data[data.length - 1].date)));
+}
+const DAYS = [
+  {
+    id: 1,
+    code: "P1",
+    label: "Push",
+    sub: "Strength",
+    mobility: "Band pull-aparts, shoulder dislocates, scap push-ups \u2014 2 min",
+    exercises: [
+      { name: "Barbell Bench Press", sets: 4, reps: "4-6", rest: "2.5-3 min", why: "Primary horizontal press for chest/triceps" },
+      { name: "Standing Barbell OHP", sets: 3, reps: "5-6", rest: "2.5 min", why: "Vertical press strength" },
+      { name: "Weighted Dips", sets: 3, reps: "6-8", rest: "2 min", why: "Compound triceps/chest, different angle" },
+      { name: "Incline DB Press", sets: 3, reps: "8-10", rest: "90 sec", why: "Upper chest, angle bench misses" },
+      { name: "Cable Lateral Raise", sets: 3, reps: "12-15", rest: "60 sec", why: "Side delt isolation" },
+      { name: "Rope OH Triceps Extension", sets: 3, reps: "10-12", rest: "60 sec", why: "Long head of triceps under stretch" },
+      { name: "Ab Wheel Rollout", sets: 3, reps: "8-10", rest: "60 sec", why: "Best anti-extension core exercise \u2014 forces the entire anterior chain to resist spinal extension under load." },
+      { name: "Cable Crunch", sets: 3, reps: "12-15", rest: "60 sec", why: "Only weighted crunch variation \u2014 allows progressive overload for the rectus abdominis." }
+    ]
+  },
+  {
+    id: 2,
+    code: "Pu1",
+    label: "Pull",
+    sub: "Strength",
+    mobility: "Cat-cow, band dead-hangs, hip hinge drill \u2014 2 min",
+    exercises: [
+      { name: "Deadlift", sets: 4, reps: "4-6", rest: "3 min", why: "Biggest posterior-chain/total-body lift" },
+      { name: "Weighted Pull-Ups", sets: 4, reps: "5-7", rest: "2.5 min", why: "Vertical pull strength" },
+      { name: "Barbell Row (Pendlay)", sets: 3, reps: "6-8", rest: "2 min", why: "Horizontal pull, back thickness" },
+      { name: "Single-Arm DB Row", sets: 3, reps: "8-10/side", rest: "90 sec", why: "Unilateral, fixes imbalance" },
+      { name: "Face Pulls", sets: 3, reps: "15-20", rest: "60 sec", why: "Rear delt/rotator cuff health" },
+      { name: "Barbell or DB Curl", sets: 3, reps: "8-10", rest: "60 sec", why: "Direct elbow flexion volume" },
+      { name: "Hanging Leg Raise", sets: 3, reps: "10-15", rest: "60 sec", why: "Lower ab and hip flexor strength \u2014 an easy add after pull work since you're already under the bar." },
+      { name: "Cable Crunch", sets: 3, reps: "12-15", rest: "60 sec", why: "Weighted crunch to close out pull day \u2014 deadlifts tax the posterior chain; this balances it with anterior core." }
+    ]
+  },
+  {
+    id: 3,
+    code: "L1",
+    label: "Legs",
+    sub: "Quad/Glute + Core",
+    mobility: "Bodyweight squats, leg swings, hip circles \u2014 3 min",
+    exercises: [
+      { name: "Back Squat", sets: 4, reps: "4-6", rest: "3 min", why: "Primary lower-body strength lift" },
+      { name: "DB Walking Lunge", sets: 3, reps: "10/leg", rest: "90 sec", why: "Unilateral strength + stability" },
+      { name: "Leg Press", sets: 3, reps: "10-12", rest: "2 min", why: "Quad volume, no spinal loading" },
+      { name: "Romanian Deadlift", sets: 3, reps: "8-10", rest: "2 min", why: "Hamstring/glute balance" },
+      { name: "Standing Calf Raise", sets: 4, reps: "12-15", rest: "60 sec", why: "Calves need direct work" },
+      { name: "Hanging Leg Raise", sets: 3, reps: "10-15", rest: "60 sec", why: "Anti-extension core" },
+      { name: "Pallof Press", sets: 3, reps: "10-12/side", rest: "60 sec", why: "Anti-rotation core" }
+    ]
+  },
+  {
+    id: 4,
+    code: "C",
+    label: "Conditioning",
+    sub: "+ Mobility",
+    mobility: "8-10 min full-body dynamic warm-up",
+    exercises: [
+      { name: "KB/DB Complex Circuit", sets: 4, reps: "40s on / 20s off", rest: "\u2014", why: "Full-body metabolic stress, low axial load" },
+      { name: "Steady-State Intervals", sets: 1, reps: "15-18 min", rest: "\u2014", why: "Highest-yield fat-oxidation work" },
+      { name: "Core Finisher", sets: 3, reps: "30-40s each", rest: "\u2014", why: "Low-load core endurance" }
+    ]
+  },
+  {
+    id: 5,
+    code: "P2",
+    label: "Push",
+    sub: "Hypertrophy",
+    mobility: "Same mobility prep as Day 1",
+    exercises: [
+      { name: "Incline Barbell Press", sets: 4, reps: "8-10", rest: "2 min", why: "Upper chest, different loading than strength day" },
+      { name: "Seated DB Shoulder Press", sets: 3, reps: "8-10", rest: "2 min", why: "Shoulder hypertrophy, stable position" },
+      { name: "Cable Chest Fly", sets: 3, reps: "12-15", rest: "75 sec", why: "Stretch-position isolation" },
+      { name: "Cable Lateral Raise", sets: 3, reps: "15-20", rest: "60 sec", why: "Higher-rep metabolic stress on side delts" },
+      { name: "Close-Grip Bench Press", sets: 3, reps: "8-10", rest: "90 sec", why: "Triceps mass + secondary chest" },
+      { name: "Triceps Rope Pushdown", sets: 3, reps: "12-15", rest: "60 sec", why: "Finishing isolation volume" },
+      { name: "Ab Wheel Rollout", sets: 3, reps: "8-10", rest: "60 sec", why: "Anti-extension core \u2014 mirror of push pattern. Keeping a rigid plank position is the same skill as pressing." },
+      { name: "Bicycle Crunches", sets: 3, reps: "20/side", rest: "60 sec", why: "Oblique and rectus ab volume \u2014 slow, deliberate reps with a full rotation beat fast sloppy ones every time." }
+    ]
+  },
+  {
+    id: 6,
+    code: "Pu2",
+    label: "Pull",
+    sub: "Hypertrophy",
+    mobility: "Same mobility prep as Day 2",
+    exercises: [
+      { name: "Wide-Grip Lat Pulldown", sets: 4, reps: "8-10", rest: "2 min", why: "Lat width, controlled tension" },
+      { name: "Seated Cable Row", sets: 3, reps: "10-12", rest: "90 sec", why: "Mid-back thickness" },
+      { name: "Chest-Supported DB Row", sets: 3, reps: "10-12", rest: "90 sec", why: "Strict form, isolates lats/rear delts" },
+      { name: "Reverse Pec Deck", sets: 3, reps: "15-20", rest: "60 sec", why: "Rear delt isolation" },
+      { name: "Incline DB Curl", sets: 3, reps: "10-12", rest: "60 sec", why: "Biceps in a stretched position" },
+      { name: "Hammer Curl", sets: 3, reps: "10-12", rest: "60 sec", why: "Brachialis + grip/forearm" },
+      { name: "Cable Crunch", sets: 3, reps: "12-15", rest: "60 sec", why: "Progressive overload for abs \u2014 treat it like any other exercise and add weight over time." },
+      { name: "Dead Bug", sets: 3, reps: "8-10/side", rest: "60 sec", why: "Core stability and coordination \u2014 teaches the deep abs to stabilise the spine while the limbs move." }
+    ]
+  },
+  {
+    id: 7,
+    code: "L2",
+    label: "Legs",
+    sub: "Posterior/Glute + Core",
+    mobility: "Same as Day 3, plus hip flexor stretch",
+    exercises: [
+      { name: "Barbell Hip Thrust", sets: 4, reps: "8-10", rest: "2 min", why: "Glute-primary posterior chain" },
+      { name: "Bulgarian Split Squat", sets: 3, reps: "8-10/leg", rest: "2 min", why: "Unilateral glute/quad + balance" },
+      { name: "Seated Leg Curl", sets: 3, reps: "10-12", rest: "90 sec", why: "Direct hamstring isolation" },
+      { name: "Stability Ball Leg Curl", sets: 3, reps: "8-12", rest: "90 sec", why: "Hamstring eccentric strength" },
+      { name: "Cable Pull-Through", sets: 3, reps: "12-15", rest: "60 sec", why: "Hip-hinge glute finisher" },
+      { name: "Weighted Plank", sets: 3, reps: "30-45s", rest: "60 sec", why: "Loaded anti-extension core" },
+      { name: "Side Plank w/ Reach", sets: 3, reps: "30s/side", rest: "45 sec", why: "Oblique/lateral core" }
+    ]
+  }
+];
+const MACRO_TARGETS_DEFAULT = { protein: 180, fat: 70, carbs: 175, calories: 2050 };
+const MAINT_CALORIES_DEFAULT = 2550;
+const DEFAULT_PROFILE = {
+  sex: "male",
+  age: "",
+  heightFt: "",
+  heightIn: "",
+  weightLbs: "",
+  activityLevel: "moderate",
+  goal: "cut"
+};
+const ACTIVITY_MULTIPLIERS = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  veryActive: 1.9
+};
+const ACTIVITY_LABELS = {
+  sedentary: "Sedentary (desk job, no exercise)",
+  light: "Lightly active (1-3x/week)",
+  moderate: "Moderately active (3-5x/week)",
+  active: "Very active (6-7x/week)",
+  veryActive: "Extremely active (twice/day or hard labour)"
+};
+const PHASE_CONFIGS = {
+  cut: {
+    label: "Cut",
+    emoji: "\u{1F525}",
+    description: "Calorie deficit to lose fat while preserving muscle",
+    calorieDelta: -500,
+    male: { protein: 0.9, fat: 0.35 },
+    female: { protein: 0.8, fat: 0.38 },
+    conditioningNote: "Prioritise all conditioning sessions this phase \u2014 cardio is your primary fat-loss tool alongside the deficit.",
+    exerciseMods: {
+      // Accessories bump to higher reps to extend time under tension at lower loads
+      "Cable Lateral Raise": { reps: "15-20" },
+      "Rope OH Triceps Extension": { reps: "12-15" },
+      "Incline DB Press": { reps: "12-15" },
+      "Cable Chest Fly": { reps: "15-20" },
+      "Triceps Rope Pushdown": { reps: "15-20" },
+      "Incline DB Curl": { reps: "12-15" },
+      "Hammer Curl": { reps: "12-15" },
+      "Reverse Pec Deck": { reps: "15-20" },
+      "Chest-Supported DB Row": { reps: "12-15" },
+      // Compounds: keep moderate weight to retain strength
+      "Barbell Bench Press": { reps: "6-8", phaseNote: "Keep weight moderate \u2014 muscle retention, not PRs." },
+      "Back Squat": { reps: "6-8", phaseNote: "Keep weight moderate \u2014 muscle retention, not PRs." },
+      "Deadlift": { reps: "5-6", phaseNote: "Maintain strength \u2014 don't push max effort in a deficit." }
+    }
+  },
+  lean_bulk: {
+    label: "Lean Bulk",
+    emoji: "\u{1F4C8}",
+    description: "Small surplus for steady muscle growth with minimal fat gain",
+    calorieDelta: 250,
+    male: { protein: 0.9, fat: 0.35 },
+    female: { protein: 0.8, fat: 0.38 },
+    conditioningNote: "Keep 1 conditioning session per week for cardiovascular health \u2014 don't do so much cardio that you eat into the surplus.",
+    exerciseMods: {}
+    // Standard programming — the default rep ranges are ideal for lean bulking
+  },
+  maintenance: {
+    label: "Maintenance",
+    emoji: "\u2696\uFE0F",
+    description: "Eat at TDEE to sustain current physique and performance",
+    calorieDelta: 0,
+    male: { protein: 0.8, fat: 0.35 },
+    female: { protein: 0.75, fat: 0.35 },
+    conditioningNote: "Keep conditioning as programmed \u2014 a balanced approach that supports both strength and cardiovascular fitness.",
+    exerciseMods: {}
+    // Standard programming
+  },
+  bulk: {
+    label: "Bulk",
+    emoji: "\u{1F4AA}",
+    description: "Larger surplus for maximum strength and muscle mass gains",
+    calorieDelta: 500,
+    male: { protein: 1, fat: 0.4 },
+    female: { protein: 0.85, fat: 0.4 },
+    conditioningNote: "Reduce conditioning to 1 session per week \u2014 recovery is critical. Don't burn off the surplus with excessive cardio.",
+    exerciseMods: {
+      // Heavy compounds go lower rep with more sets
+      "Barbell Bench Press": { reps: "3-5", sets: 5, phaseNote: "Go heavy and push for progressive overload every session." },
+      "Standing Barbell OHP": { reps: "4-6", sets: 4, phaseNote: "Add weight when you hit the top of the rep range." },
+      "Back Squat": { reps: "3-5", sets: 5, phaseNote: "Bulk is the time to drive squat strength \u2014 add weight each week." },
+      "Deadlift": { reps: "3-5", sets: 5, phaseNote: "Pull heavy \u2014 a bulk is the best time to push your deadlift." },
+      "Weighted Pull-Ups": { reps: "4-6", sets: 5, phaseNote: "Add weight every 1-2 weeks." },
+      "Barbell Row (Pendlay)": { reps: "4-6", sets: 4, phaseNote: "Load it heavy \u2014 row strength carries over to everything." },
+      "Incline Barbell Press": { reps: "6-8", sets: 4, phaseNote: "Drive upper chest strength with progressive loading." },
+      // Female compounds
+      "Sumo Romanian Deadlift": { reps: "4-6", sets: 5, phaseNote: "Load this heavier than usual \u2014 a surplus is the right time to build posterior chain strength." },
+      "Barbell Hip Thrust": { reps: "6-8", sets: 5, phaseNote: "Add weight aggressively \u2014 this is your primary glute strength builder." },
+      "Goblet Squat": { reps: "8-10", sets: 4, phaseNote: "Use a heavier DB than usual and push for progressive overload." }
+    }
+  }
+};
+function calcTDEE(profile) {
+  const kg = Number(profile.weightLbs) / 2.205;
+  const totalIn = Number(profile.heightFt) * 12 + Number(profile.heightIn);
+  const cm = totalIn * 2.54;
+  const age = Number(profile.age);
+  if (!kg || !cm || !age) return null;
+  const bmr = profile.sex === "male" ? 10 * kg + 6.25 * cm - 5 * age + 5 : 10 * kg + 6.25 * cm - 5 * age - 161;
+  const multiplier = ACTIVITY_MULTIPLIERS[profile.activityLevel] || 1.55;
+  return Math.round(bmr * multiplier);
+}
+function calcMacroTargets(profile) {
+  const tdee = calcTDEE(profile);
+  const lbs = Number(profile.weightLbs);
+  const phase = PHASE_CONFIGS[profile.goal] || PHASE_CONFIGS.cut;
+  if (!tdee || !lbs) return MACRO_TARGETS_DEFAULT;
+  const cals = Math.max(1200, tdee + phase.calorieDelta);
+  const ratios = profile.sex === "male" ? phase.male : phase.female;
+  const protein = Math.round(lbs * ratios.protein);
+  const fat = Math.round(lbs * ratios.fat);
+  const remainingCals = cals - protein * 4 - fat * 9;
+  const carbs = Math.max(50, Math.round(remainingCals / 4));
+  return { protein, fat, carbs, calories: cals };
+}
+function calcMaintCalories(profile) {
+  return calcTDEE(profile) || MAINT_CALORIES_DEFAULT;
+}
+const FEMALE_DAYS = [
+  {
+    id: 1,
+    code: "G1",
+    label: "Glutes & Hamstrings",
+    sub: "Posterior Strength",
+    mobility: "Glute bridges (unweighted), hip circles, banded clamshells \u2014 3 min",
+    exercises: [
+      { name: "Barbell Hip Thrust", sets: 4, reps: "8-10", rest: "2 min", why: "The single best glute builder \u2014 loads the glute at full extension. Prioritise this above everything else." },
+      { name: "Romanian Deadlift", sets: 3, reps: "8-10", rest: "2 min", why: "Loads glutes and hamstrings in a stretched position \u2014 pairs perfectly with hip thrust for full posterior chain." },
+      { name: "Seated Leg Curl", sets: 3, reps: "10-12", rest: "90 sec", why: "Direct hamstring isolation \u2014 important complement to RDL which works the muscle differently." },
+      { name: "Cable Glute Kickback", sets: 3, reps: "15-20/side", rest: "60 sec", why: "Isolates the glute without quad involvement \u2014 great for mind-muscle connection and glute shaping." },
+      { name: "Cable Pull-Through", sets: 3, reps: "15-20", rest: "60 sec", why: "Hip-hinge glute finisher \u2014 drive hips forward and squeeze hard at the top." },
+      { name: "Side-Lying Hip Abduction", sets: 3, reps: "20/side", rest: "45 sec", why: "Targets the gluteus medius \u2014 essential for hip stability and that outer glute shape." },
+      { name: "Dead Bug", sets: 3, reps: "8-10/side", rest: "60 sec", why: "Core stability \u2014 keeps the lower back healthy to handle the hip thrust and RDL volume in this session." },
+      { name: "Cable Crunch", sets: 3, reps: "12-15", rest: "60 sec", why: "Weighted ab work \u2014 the only way to progressively overload the abs just like any other muscle." }
+    ]
+  },
+  {
+    id: 2,
+    code: "UB1",
+    label: "Upper Body",
+    sub: "Push + Pull",
+    mobility: "Arm circles, band pull-aparts, scap retractions \u2014 2 min",
+    exercises: [
+      { name: "Seated DB Shoulder Press", sets: 3, reps: "10-12", rest: "90 sec", why: "Primary shoulder builder \u2014 seated position allows focus on deltoids without lower-back strain." },
+      { name: "Wide-Grip Lat Pulldown", sets: 3, reps: "10-12", rest: "90 sec", why: "Best vertical pull for lat width \u2014 builds that V-taper and improves posture." },
+      { name: "DB Bench Press", sets: 3, reps: "10-12", rest: "90 sec", why: "Horizontal push for chest and triceps \u2014 dumbbells allow a more natural pressing arc than a barbell." },
+      { name: "Seated Cable Row", sets: 3, reps: "10-12", rest: "90 sec", why: "Back thickness and mid-back density \u2014 keep chest tall and squeeze shoulder blades together." },
+      { name: "Cable Lateral Raise", sets: 3, reps: "15-20", rest: "60 sec", why: "Side delt isolation \u2014 gives shoulders width and roundness." },
+      { name: "Face Pulls", sets: 3, reps: "15-20", rest: "60 sec", why: "Rear delt and rotator cuff health \u2014 critical for shoulder longevity and posture." },
+      { name: "Overhead Cable Triceps Extension", sets: 3, reps: "12-15", rest: "60 sec", why: "Long head of triceps under stretch \u2014 best exercise for overall arm tone." },
+      { name: "DB Curl", sets: 3, reps: "12-15", rest: "60 sec", why: "Biceps \u2014 full supination on each rep for maximum peak contraction." },
+      { name: "Ab Wheel Rollout", sets: 3, reps: "8-10", rest: "60 sec", why: "Best anti-extension core exercise \u2014 a natural pairing with pressing work since both require a rigid trunk." },
+      { name: "Bicycle Crunches", sets: 3, reps: "20/side", rest: "60 sec", why: "Obliques and rectus abs together \u2014 slow controlled reps with a full twist at the top." }
+    ]
+  },
+  {
+    id: 3,
+    code: "L1",
+    label: "Legs",
+    sub: "Quad & Glute Focus",
+    mobility: "Bodyweight squats, leg swings, hip circles \u2014 3 min",
+    exercises: [
+      { name: "Goblet Squat", sets: 4, reps: "10-12", rest: "2 min", why: "Upright torso and wider stance naturally biases glutes. A safer, more effective squat pattern for most women." },
+      { name: "Leg Press (feet high & wide)", sets: 3, reps: "12-15", rest: "90 sec", why: "High, wide foot placement shifts emphasis to glutes and inner thighs rather than quads." },
+      { name: "Bulgarian Split Squat", sets: 3, reps: "10-12/leg", rest: "2 min", why: "Best unilateral lower body exercise \u2014 fixes imbalances and hits glute/quad heavily per leg." },
+      { name: "Sumo Deadlift", sets: 3, reps: "8-10", rest: "2 min", why: "Wide stance loads inner thighs and glutes rather than spinal erectors \u2014 more female-anatomy-friendly." },
+      { name: "Standing Calf Raise", sets: 4, reps: "15-20", rest: "60 sec", why: "Direct calf work \u2014 high reps work well here as calves are a slow-twitch dominant muscle." },
+      { name: "Hanging Leg Raise", sets: 3, reps: "12-15", rest: "60 sec", why: "Anti-extension core \u2014 builds lower ab strength and hip flexor control." }
+    ]
+  },
+  {
+    id: 4,
+    code: "C",
+    label: "Conditioning",
+    sub: "+ Mobility",
+    mobility: "8-10 min full-body dynamic warm-up",
+    exercises: [
+      { name: "HIIT Circuit (KB or bodyweight)", sets: 5, reps: "30s on / 15s off", rest: "\u2014", why: "Short, intense bursts maximise calorie burn and elevate metabolism for hours post-workout." },
+      { name: "Steady-State Cardio", sets: 1, reps: "20-25 min", rest: "\u2014", why: "Zone 2 cardio \u2014 sustainable fat oxidation without spiking cortisol. Walk fast, cycle, or row." },
+      { name: "Core Finisher", sets: 3, reps: "30-40s each", rest: "\u2014", why: "Plank variations, dead bugs, or bird dogs \u2014 builds a strong, stable core around the whole cycle." }
+    ]
+  },
+  {
+    id: 5,
+    code: "G2",
+    label: "Glutes & Posterior Chain",
+    sub: "Strength Focus",
+    mobility: "Hip hinge drills, banded glute activation \u2014 3 min",
+    exercises: [
+      { name: "Sumo Romanian Deadlift", sets: 4, reps: "6-8", rest: "2.5 min", why: "Heavier hip hinge \u2014 builds raw posterior chain strength that carries over to all glute exercises." },
+      { name: "Barbell Hip Thrust", sets: 4, reps: "8-10", rest: "2 min", why: "Second glute session of the week \u2014 hit it heavy while you're fresh." },
+      { name: "Stability Ball Leg Curl", sets: 3, reps: "10-12", rest: "90 sec", why: "Eccentric hamstring strength \u2014 the ball makes the hamstrings work harder through the full range." },
+      { name: "Cable Glute Kickback", sets: 3, reps: "15-20/side", rest: "60 sec", why: "Glute isolation finisher \u2014 maintain pelvic tilt and squeeze at the top of each rep." },
+      { name: "Weighted Plank", sets: 3, reps: "30-45s", rest: "60 sec", why: "Loaded anti-extension core \u2014 a plate on your back makes this dramatically harder." },
+      { name: "Side Plank w/ Reach", sets: 3, reps: "30s/side", rest: "45 sec", why: "Oblique and lateral core strength \u2014 helps with waist definition and rotational stability." }
+    ]
+  },
+  {
+    id: 6,
+    code: "UB2",
+    label: "Upper Body",
+    sub: "Hypertrophy Focus",
+    mobility: "Same as Day 2",
+    exercises: [
+      { name: "Incline DB Press", sets: 3, reps: "12-15", rest: "90 sec", why: "Upper chest emphasis \u2014 incline angle hits the clavicular head for a fuller chest shape." },
+      { name: "Chest-Supported DB Row", sets: 3, reps: "12-15", rest: "90 sec", why: "Strict back work \u2014 chest support eliminates momentum and forces the lats and rhomboids to do all the work." },
+      { name: "Cable Chest Fly", sets: 3, reps: "15-20", rest: "60 sec", why: "Chest isolation in a stretched position \u2014 excellent for building shape and fullness across the chest." },
+      { name: "Reverse Pec Deck", sets: 3, reps: "15-20", rest: "60 sec", why: "Rear delt isolation \u2014 balances the pushing volume and keeps shoulders healthy." },
+      { name: "Cable Lateral Raise", sets: 3, reps: "15-20", rest: "60 sec", why: "Higher-rep side delt finisher \u2014 constant cable tension is more effective than dumbbells here." },
+      { name: "Incline DB Curl", sets: 3, reps: "12-15", rest: "60 sec", why: "Biceps in a stretched position at the bottom \u2014 maximises the range of motion for better growth." },
+      { name: "Triceps Rope Pushdown", sets: 3, reps: "15-20", rest: "60 sec", why: "Finishing triceps volume \u2014 high-rep pump work for arm tone and definition." },
+      { name: "Cable Crunch", sets: 3, reps: "12-15", rest: "60 sec", why: "Weighted ab work \u2014 add small increments of weight each week just like any other exercise." },
+      { name: "Hanging Leg Raise", sets: 3, reps: "10-15", rest: "60 sec", why: "Lower abs and hip flexors \u2014 a great finishing move that also improves grip from the upper body session." }
+    ]
+  },
+  {
+    id: 7,
+    code: "L2",
+    label: "Legs",
+    sub: "Volume + Core",
+    mobility: "Same as Day 3, plus hip flexor stretch",
+    exercises: [
+      { name: "Glute Bridge (weighted)", sets: 4, reps: "15-20", rest: "60 sec", why: "Lighter than hip thrust \u2014 perfect for a higher-volume day. Squeeze and hold 1 second at the top." },
+      { name: "DB Walking Lunge", sets: 3, reps: "12/leg", rest: "90 sec", why: "Unilateral glute and quad work \u2014 keep torso upright and take long strides to maximise glute stretch." },
+      { name: "Seated Leg Curl", sets: 3, reps: "12-15", rest: "60 sec", why: "Second hamstring isolation session of the week \u2014 use a moderate weight and focus on the squeeze." },
+      { name: "Side-Lying Hip Abduction", sets: 3, reps: "20/side", rest: "45 sec", why: "Glute med finisher \u2014 adds volume to the outer glute without fatiguing the primary movers." },
+      { name: "Pallof Press", sets: 3, reps: "12-15/side", rest: "60 sec", why: "Anti-rotation core \u2014 builds lateral stability through the entire trunk." },
+      { name: "Dead Bug", sets: 3, reps: "8-10/side", rest: "60 sec", why: "Core control and coordination \u2014 teaches the deep abs to stabilise the spine independently of limb movement." }
+    ]
+  }
+];
+function getDaysForProfile(profile) {
+  const baseDays = profile.sex === "female" ? FEMALE_DAYS : DAYS;
+  const phase = PHASE_CONFIGS[profile.goal] || PHASE_CONFIGS.cut;
+  return baseDays.map((day) => ({
+    ...day,
+    phaseNote: day.code === "C" ? phase.conditioningNote : null,
+    exercises: day.exercises.map((ex) => {
+      const mod = phase.exerciseMods[ex.name];
+      if (mod) {
+        return {
+          ...ex,
+          reps: mod.reps || ex.reps,
+          sets: mod.sets || ex.sets,
+          phaseNote: mod.phaseNote || null
+        };
+      }
+      return ex;
+    })
+  }));
+}
+const DAIRY_FREE_FOODS = [
+  { group: "Protein", items: "Chicken, turkey, lean beef, bison, pork tenderloin, eggs, fish/shellfish, pea/rice/hemp protein, tofu, tempeh, edamame" },
+  { group: "Fat", items: "Olive oil, avocado, nuts/nut butters, seeds, coconut milk/yogurt, egg yolks, fatty fish" },
+  { group: "Carbs", items: "Rice, oats, potatoes/sweet potatoes, quinoa, fruit, beans/lentils, whole-grain bread (check labels), dairy-free tortillas" },
+  { group: "Watch for hidden dairy", items: 'Protein bars/shakes (often whey), salad dressings, sauces, some deli meats, "non-dairy" creamers, some dark chocolate' }
+];
+const FOOD_DB = [
+  { name: "Chicken breast", aliases: ["chicken", "grilled chicken", "chicken breast cooked"], serving: "100g cooked", gramsPerServing: 100, protein: 31, fat: 3.6, carbs: 0 },
+  { name: "Turkey breast", aliases: ["turkey", "ground turkey"], serving: "100g cooked", gramsPerServing: 100, protein: 29, fat: 1.8, carbs: 0 },
+  { name: "Lean ground beef", aliases: ["ground beef", "beef", "93/7 beef"], serving: "100g cooked", gramsPerServing: 100, protein: 26, fat: 8, carbs: 0 },
+  { name: "Salmon", aliases: ["grilled salmon", "salmon fillet"], serving: "100g cooked", gramsPerServing: 100, protein: 25, fat: 13, carbs: 0 },
+  { name: "Tuna (canned in water)", aliases: ["tuna", "canned tuna"], serving: "100g", gramsPerServing: 100, protein: 26, fat: 1, carbs: 0 },
+  { name: "Shrimp", aliases: ["prawns", "cooked shrimp"], serving: "100g cooked", gramsPerServing: 100, protein: 24, fat: 0.3, carbs: 0.2 },
+  { name: "Egg", aliases: ["eggs", "whole egg", "boiled egg", "fried egg"], serving: "1 large egg (~50g)", gramsPerServing: 50, protein: 6, fat: 5, carbs: 0.6 },
+  { name: "Egg whites", aliases: ["egg white"], serving: "100g", gramsPerServing: 100, protein: 11, fat: 0.2, carbs: 0.7 },
+  { name: "Tofu", aliases: ["firm tofu"], serving: "100g", gramsPerServing: 100, protein: 8, fat: 4.8, carbs: 1.9 },
+  { name: "Tempeh", aliases: [], serving: "100g", gramsPerServing: 100, protein: 19, fat: 11, carbs: 9 },
+  { name: "Edamame", aliases: ["soybeans"], serving: "1 cup cooked (~155g)", gramsPerServing: 155, gramsPerCup: 155, protein: 17, fat: 8, carbs: 14 },
+  { name: "Protein powder", aliases: ["whey protein", "protein shake", "protein scoop"], serving: "1 scoop (~30g)", gramsPerServing: 30, protein: 24, fat: 1.5, carbs: 3 },
+  { name: "White rice", aliases: ["rice", "steamed rice"], serving: "1 cup cooked (~158g)", gramsPerServing: 158, gramsPerCup: 158, protein: 4.3, fat: 0.4, carbs: 44.5 },
+  { name: "Brown rice", aliases: [], serving: "1 cup cooked (~195g)", gramsPerServing: 195, gramsPerCup: 195, protein: 5.5, fat: 1.8, carbs: 45 },
+  { name: "Oats", aliases: ["oatmeal", "rolled oats"], serving: "1/2 cup dry (40g)", gramsPerServing: 40, gramsPerCup: 80, protein: 5, fat: 3, carbs: 27 },
+  { name: "Sweet potato", aliases: ["baked sweet potato"], serving: "1 medium (150g)", gramsPerServing: 150, protein: 2, fat: 0.1, carbs: 24 },
+  { name: "Potato", aliases: ["baked potato", "white potato"], serving: "1 medium (173g)", gramsPerServing: 173, protein: 4, fat: 0.2, carbs: 37 },
+  { name: "Quinoa", aliases: [], serving: "1 cup cooked (~185g)", gramsPerServing: 185, gramsPerCup: 185, protein: 8, fat: 3.6, carbs: 39 },
+  { name: "Banana", aliases: [], serving: "1 medium (~118g)", gramsPerServing: 118, protein: 1.3, fat: 0.4, carbs: 27 },
+  { name: "Apple", aliases: [], serving: "1 medium (~182g)", gramsPerServing: 182, protein: 0.5, fat: 0.3, carbs: 25 },
+  { name: "Black beans", aliases: ["beans"], serving: "1 cup cooked (~172g)", gramsPerServing: 172, gramsPerCup: 172, protein: 15, fat: 0.9, carbs: 41 },
+  { name: "Lentils", aliases: [], serving: "1 cup cooked (~198g)", gramsPerServing: 198, gramsPerCup: 198, protein: 18, fat: 0.8, carbs: 40 },
+  { name: "Whole wheat bread", aliases: ["toast", "bread"], serving: "1 slice (~28g)", gramsPerServing: 28, protein: 4, fat: 1, carbs: 12 },
+  { name: "Olive oil", aliases: [], serving: "1 tbsp (~14g)", gramsPerServing: 14, protein: 0, fat: 14, carbs: 0 },
+  { name: "Avocado", aliases: [], serving: "1/2 medium (~100g)", gramsPerServing: 100, protein: 2, fat: 15, carbs: 9 },
+  { name: "Almonds", aliases: [], serving: "1 oz (28g)", gramsPerServing: 28, protein: 6, fat: 14, carbs: 6 },
+  { name: "Walnuts", aliases: [], serving: "1 oz (28g)", gramsPerServing: 28, protein: 4.3, fat: 18, carbs: 3.9 },
+  { name: "Peanut butter", aliases: [], serving: "2 tbsp (~32g)", gramsPerServing: 32, protein: 7, fat: 16, carbs: 6 },
+  { name: "Coconut milk", aliases: ["canned coconut milk"], serving: "1/4 cup (~60g)", gramsPerServing: 60, gramsPerCup: 240, protein: 1, fat: 12, carbs: 1.5 },
+  // Berries
+  { name: "Blueberries", aliases: ["blueberry"], serving: "1 cup (~148g)", gramsPerServing: 148, gramsPerCup: 148, protein: 1.1, fat: 0.5, carbs: 21 },
+  { name: "Strawberries", aliases: ["strawberry"], serving: "1 cup (~152g)", gramsPerServing: 152, gramsPerCup: 152, protein: 1, fat: 0.5, carbs: 11.7 },
+  { name: "Blackberries", aliases: ["blackberry"], serving: "1 cup (~144g)", gramsPerServing: 144, gramsPerCup: 144, protein: 2, fat: 0.7, carbs: 13.8 },
+  { name: "Raspberries", aliases: ["raspberry"], serving: "1 cup (~123g)", gramsPerServing: 123, gramsPerCup: 123, protein: 1.5, fat: 0.8, carbs: 14.7 },
+  { name: "Mixed berries", aliases: ["berries", "berry mix", "frozen berries"], serving: "1 cup (~140g)", gramsPerServing: 140, gramsPerCup: 140, protein: 1.2, fat: 0.5, carbs: 17 },
+  // Vegetables
+  { name: "Broccoli", aliases: ["steamed broccoli", "broccoli florets"], serving: "1 cup chopped (~91g)", gramsPerServing: 91, gramsPerCup: 91, protein: 2.6, fat: 0.3, carbs: 6 },
+  { name: "Broccolini", aliases: ["baby broccoli"], serving: "1 cup (~85g)", gramsPerServing: 85, gramsPerCup: 85, protein: 2.4, fat: 0.3, carbs: 5.5 },
+  { name: "Green beans", aliases: ["string beans", "french beans"], serving: "1 cup (~100g)", gramsPerServing: 100, gramsPerCup: 100, protein: 1.8, fat: 0.1, carbs: 7 },
+  { name: "Spinach", aliases: ["baby spinach"], serving: "1 cup raw (~30g)", gramsPerServing: 30, gramsPerCup: 30, protein: 0.9, fat: 0.1, carbs: 1.1 },
+  { name: "Asparagus", aliases: [], serving: "1 cup (~134g)", gramsPerServing: 134, gramsPerCup: 134, protein: 2.9, fat: 0.2, carbs: 5.2 },
+  { name: "Zucchini", aliases: ["courgette"], serving: "1 cup sliced (~124g)", gramsPerServing: 124, gramsPerCup: 124, protein: 1.5, fat: 0.4, carbs: 3.5 },
+  // Meats
+  { name: "Top sirloin steak", aliases: ["sirloin", "sirloin steak", "top sirloin"], serving: "100g cooked", gramsPerServing: 100, protein: 30, fat: 8, carbs: 0 },
+  { name: "80% lean ground beef", aliases: ["80/20 ground beef", "ground beef 80", "80 lean ground beef", "80% lean beef"], serving: "100g cooked", gramsPerServing: 100, protein: 20, fat: 18, carbs: 0 },
+  { name: "90% lean ground beef", aliases: ["90/10 ground beef", "ground beef 90", "90 lean ground beef"], serving: "100g cooked", gramsPerServing: 100, protein: 24, fat: 10, carbs: 0 }
+];
+const OZ_TO_G = 28.3495;
+function findFoodMatch(rawQuery) {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return null;
+  const norm = (s) => s.toLowerCase();
+  let match = FOOD_DB.find((f) => norm(f.name) === q);
+  if (match) return match;
+  match = FOOD_DB.find((f) => f.aliases.some((a) => norm(a) === q));
+  if (match) return match;
+  match = FOOD_DB.find((f) => q.includes(norm(f.name)) || norm(f.name).includes(q));
+  if (match) return match;
+  match = FOOD_DB.find((f) => f.aliases.some((a) => q.includes(norm(a)) || norm(a).includes(q)));
+  return match || null;
+}
+async function estimateMacrosWithAI(query, quantityLabel) {
+  throw new Error("not-in-db");
+}
+function todayStr(d = /* @__PURE__ */ new Date()) {
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${yr}-${mo}-${da}`;
+}
+function daysBetween(a, b) {
+  const da = /* @__PURE__ */ new Date(a + "T00:00:00");
+  const db = /* @__PURE__ */ new Date(b + "T00:00:00");
+  return Math.round((db - da) / 864e5);
+}
+function fmt1(n) {
+  return Math.round(n * 10) / 10;
+}
+function formatAmount(amount, unit) {
+  if (!amount) return "";
+  if (unit === "serving") {
+    const n = Number(amount);
+    return `${amount} ${n === 1 ? "serving" : "servings"}`;
+  }
+  return `${amount}${unit}`;
+}
+async function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+async function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error("Storage save failed for", key, e);
+  }
+}
+function SectionLabel({ children }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "font-display text-xs tracking-widest uppercase text-muted mb-2" }, children);
+}
+function Card({ children, className = "" }) {
+  return /* @__PURE__ */ React.createElement("div", { className: `bg-surface border border-line rounded-2xl p-4 ${className}` }, children);
+}
+function MacroBar({ label, current, target, unit, accent }) {
+  const pct = Math.min(100, current / target * 100 || 0);
+  const over = current > target;
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-baseline mb-1" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink" }, label), /* @__PURE__ */ React.createElement("span", { className: "font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: over ? "text-warn" : "text-ink" }, fmt1(current)), /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " / ", target, unit))), /* @__PURE__ */ React.createElement("div", { className: "h-2 rounded-full bg-surface2 overflow-hidden" }, /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      className: "h-full rounded-full",
+      style: { width: `${pct}%`, background: over ? "var(--warn)" : accent }
+    }
+  )));
+}
+function CycleDial({ days, cycleDay, selectedDayId, onSelect }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" }, days.map((d) => {
+    const isSelected = d.id === selectedDayId;
+    const isToday = d.id === cycleDay;
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: d.id,
+        onClick: () => onSelect(d.id),
+        className: "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-xl border font-display shrink-0 transition-colors",
+        style: {
+          background: isSelected ? "var(--amber)" : "var(--surface)",
+          borderColor: isSelected ? "var(--amber)" : "var(--line)",
+          color: isSelected ? "#1B1A18" : "var(--ink)"
+        }
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "text-[10px] uppercase tracking-wide opacity-80" }, "Day ", d.id),
+      /* @__PURE__ */ React.createElement("span", { className: "text-sm font-semibold" }, d.code),
+      isToday && /* @__PURE__ */ React.createElement(
+        "span",
+        {
+          className: "w-1.5 h-1.5 rounded-full mt-0.5",
+          style: { background: isSelected ? "#1B1A18" : "var(--amber)" }
+        }
+      )
+    );
+  }));
+}
+function ExerciseCard({ exercise, draftSets, onChangeSet, lastTime }) {
+  const [showWhy, setShowWhy] = useState(false);
+  return /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-start gap-3" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "font-body font-semibold text-ink" }, exercise.name), /* @__PURE__ */ React.createElement("div", { className: "font-mono text-xs text-muted mt-0.5" }, exercise.sets, " x ", exercise.reps, " \xB7 rest ", exercise.rest)), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setShowWhy((s) => !s),
+      className: "text-muted shrink-0 p-1 -mr-1 -mt-1",
+      "aria-label": "Why this exercise"
+    },
+    /* @__PURE__ */ React.createElement(InfoIcon, { size: 16 })
+  )), showWhy && /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-2 leading-relaxed" }, exercise.why), exercise.femaleNote && /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs mt-2 leading-relaxed px-2 py-1.5 rounded-lg", style: { background: "var(--steel-dim)", color: "var(--ink)" } }, exercise.femaleNote), exercise.phaseNote && /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs mt-2 leading-relaxed px-2 py-1.5 rounded-lg", style: { background: "var(--amber-dim)", color: "var(--ink)" } }, exercise.phaseNote), /* @__PURE__ */ React.createElement("div", { className: "mt-3 space-y-1.5" }, /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-[28px_1fr_1fr] gap-2 text-[10px] uppercase tracking-wide text-muted px-0.5" }, /* @__PURE__ */ React.createElement("span", null, "Set"), /* @__PURE__ */ React.createElement("span", null, "Weight"), /* @__PURE__ */ React.createElement("span", null, "Reps")), draftSets.map((row, i) => {
+    const last = lastTime && lastTime[i];
+    return /* @__PURE__ */ React.createElement("div", { key: i, className: "grid grid-cols-[28px_1fr_1fr] gap-2 items-center" }, /* @__PURE__ */ React.createElement("span", { className: "font-mono text-sm text-muted" }, i + 1), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        inputMode: "decimal",
+        value: row.weight,
+        onChange: (e) => onChangeSet(i, "weight", e.target.value),
+        placeholder: last ? String(last.weight) : "\u2014",
+        className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-full"
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        inputMode: "numeric",
+        value: row.reps,
+        onChange: (e) => onChangeSet(i, "reps", e.target.value),
+        placeholder: last ? String(last.reps) : "\u2014",
+        className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-full"
+      }
+    ));
+  }), lastTime && /* @__PURE__ */ React.createElement("div", { className: "font-mono text-[11px] text-muted pt-1" }, "Last time: ", lastTime.map((s) => `${s.weight || 0}x${s.reps || 0}`).join(", "))));
+}
+function WorkoutTab({ appMeta, saveAppMeta, workoutLogs, saveWorkoutLogs, profile }) {
+  const [selectedDayId, setSelectedDayId] = useState(appMeta.cycleDay || 1);
+  const today = todayStr();
+  const days = getDaysForProfile(profile || { sex: "male" });
+  const day = days.find((d) => d.id === selectedDayId) || days[0];
+  const existingToday = workoutLogs[today] && workoutLogs[today].day === selectedDayId ? workoutLogs[today].exercises : null;
+  const [draft, setDraft] = useState(() => buildDraft(day, existingToday));
+  const [savedAt, setSavedAt] = useState(null);
+  useEffect(() => {
+    const ex = workoutLogs[today] && workoutLogs[today].day === selectedDayId ? workoutLogs[today].exercises : null;
+    setDraft(buildDraft(day, ex));
+    setSavedAt(null);
+  }, [selectedDayId]);
+  function buildDraft(d, existing) {
+    const obj = {};
+    d.exercises.forEach((ex) => {
+      const rows = [];
+      for (let i = 0; i < ex.sets; i++) {
+        const ev = existing && existing[ex.name] && existing[ex.name][i];
+        rows.push({ weight: ev ? String(ev.weight) : "", reps: ev ? String(ev.reps) : "" });
+      }
+      obj[ex.name] = rows;
+    });
+    return obj;
+  }
+  function getLastTime(exerciseName) {
+    const dates = Object.keys(workoutLogs).filter((dt) => dt !== today).sort((a, b) => a < b ? 1 : -1);
+    for (const dt of dates) {
+      const log = workoutLogs[dt];
+      if (log && log.exercises && log.exercises[exerciseName]) {
+        return log.exercises[exerciseName];
+      }
+    }
+    return null;
+  }
+  function onChangeSet(exerciseName, idx, field, value) {
+    setDraft((prev) => {
+      const rows = prev[exerciseName].map(
+        (r, i) => i === idx ? { ...r, [field]: value } : r
+      );
+      return { ...prev, [exerciseName]: rows };
+    });
+  }
+  async function handleSave() {
+    const next = { ...workoutLogs, [today]: { day: selectedDayId, exercises: draft } };
+    await saveWorkoutLogs(next);
+    setSavedAt(/* @__PURE__ */ new Date());
+  }
+  async function handleCompleteAndAdvance() {
+    await handleSave();
+    const nextDay = selectedDayId === 7 ? 1 : selectedDayId + 1;
+    await saveAppMeta({ ...appMeta, cycleDay: nextDay });
+    setSelectedDayId(nextDay);
+  }
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Rolling 7-day cycle \u2014 not a Monday reset"), /* @__PURE__ */ React.createElement(
+    CycleDial,
+    {
+      days,
+      cycleDay: appMeta.cycleDay,
+      selectedDayId,
+      onSelect: setSelectedDayId
+    }
+  )), /* @__PURE__ */ React.createElement(Card, { className: "bg-amber-dim border-none" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-baseline justify-between" }, /* @__PURE__ */ React.createElement("div", { className: "font-display text-lg text-ink" }, day.label, " ", /* @__PURE__ */ React.createElement("span", { className: "text-muted text-sm font-body" }, "\u2014 ", day.sub))), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-1" }, "Mobility prep: ", day.mobility), day.phaseNote && /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs mt-2 leading-relaxed px-2 py-1.5 rounded-lg", style: { background: "var(--amber-dim)", color: "var(--ink)" } }, day.phaseNote)), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, day.exercises.map((ex) => /* @__PURE__ */ React.createElement(
+    ExerciseCard,
+    {
+      key: ex.name,
+      exercise: ex,
+      draftSets: draft[ex.name] || [],
+      onChangeSet: (i, field, value) => onChangeSet(ex.name, i, field, value),
+      lastTime: getLastTime(ex.name)
+    }
+  ))), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 pt-1" }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handleSave,
+      className: "flex-1 bg-surface2 border border-line rounded-xl py-3 font-display text-sm uppercase tracking-wide text-ink"
+    },
+    "Save progress"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handleCompleteAndAdvance,
+      className: "flex-1 bg-amber rounded-xl py-3 font-display text-sm uppercase tracking-wide flex items-center justify-center gap-1.5",
+      style: { color: "#1B1A18" }
+    },
+    /* @__PURE__ */ React.createElement(CheckIcon, { size: 16 }),
+    " Complete day"
+  )), savedAt && /* @__PURE__ */ React.createElement("div", { className: "font-mono text-[11px] text-muted text-center" }, "Saved ", savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })));
+}
+function ifWindowStatus() {
+  const now = /* @__PURE__ */ new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const open = 6 * 60 + 30;
+  const close = 14 * 60 + 30;
+  if (mins < open) return { label: "Fasted \u2014 window opens 6:30 AM", tone: "fasted" };
+  if (mins <= close) return { label: "Eating window open \u2014 closes 2:30 PM", tone: "open" };
+  return { label: "Window closed \u2014 fasted until 6:30 AM", tone: "fasted" };
+}
+function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
+  const today = todayStr();
+  const todayLog = dailyLogs[today] || { meals: [], weight: null };
+  const meals = todayLog.meals || [];
+  const [form, setForm] = useState({ name: "", amount: "", unit: "g", servings: "", protein: "", fat: "", carbs: "" });
+  const [showFoods, setShowFoods] = useState(false);
+  const [calc, setCalc] = useState({ status: "idle", label: "" });
+  const totals = meals.reduce(
+    (acc, m) => ({
+      protein: acc.protein + m.protein,
+      fat: acc.fat + m.fat,
+      carbs: acc.carbs + m.carbs,
+      calories: acc.calories + m.calories
+    }),
+    { protein: 0, fat: 0, carbs: 0, calories: 0 }
+  );
+  const ifStatus = ifWindowStatus();
+  const previewCalories = (Number(form.protein) || 0) * 4 + (Number(form.fat) || 0) * 9 + (Number(form.carbs) || 0) * 4;
+  async function handleCalculate() {
+    const query = form.name.trim();
+    if (!query) return;
+    const enteredAmount = Number(form.amount);
+    const hasAmount = form.amount !== "" && !isNaN(enteredAmount) && enteredAmount > 0;
+    const enteredServings = Number(form.servings);
+    const hasServings = form.servings !== "" && !isNaN(enteredServings) && enteredServings > 0;
+    const match = findFoodMatch(query);
+    if (match) {
+      const baseGrams = match.gramsPerServing;
+      let scale;
+      let usedServings = false;
+      if (hasServings) {
+        scale = enteredServings;
+        usedServings = true;
+      } else if (hasAmount) {
+        if (form.unit === "cup") {
+          if (!match.gramsPerCup) {
+            setCalc({ status: "error", label: `${match.name} isn't typically measured in cups \u2014 use g or oz instead.` });
+            return;
+          }
+          const grams = enteredAmount * match.gramsPerCup;
+          scale = grams / baseGrams;
+        } else {
+          const grams = form.unit === "oz" ? enteredAmount * OZ_TO_G : enteredAmount;
+          scale = grams / baseGrams;
+        }
+      } else {
+        scale = 1;
+      }
+      setForm((f) => ({
+        ...f,
+        servings: hasServings || hasAmount ? f.servings : "1",
+        protein: String(fmt1(match.protein * scale)),
+        fat: String(fmt1(match.fat * scale)),
+        carbs: String(fmt1(match.carbs * scale))
+      }));
+      let label;
+      if (usedServings) {
+        label = `From food list \xB7 ${match.name} \u2014 ${enteredServings} \xD7 ${match.serving}`;
+      } else if (hasAmount && form.unit === "cup") {
+        label = `From food list \xB7 ${match.name} \u2014 ${enteredAmount} cup${enteredAmount !== 1 ? "s" : ""} (~${fmt1(enteredAmount * match.gramsPerCup)}g)`;
+      } else if (hasAmount) {
+        label = `From food list \xB7 ${match.name} \u2014 ${fmt1(scale * baseGrams)}g total (1 serving = ${match.serving})`;
+      } else {
+        label = `From food list \xB7 ${match.name} \u2014 1 serving = ${match.serving}. Use Amount or Servings above for more or less.`;
+      }
+      setCalc({ status: "matched", label });
+      return;
+    }
+    setCalc({ status: "loading", label: "" });
+    try {
+      const quantityLabel = hasServings ? formatAmount(form.servings, "serving") : hasAmount ? form.unit === "cup" ? `${form.amount} cup${Number(form.amount) !== 1 ? "s" : ""}` : formatAmount(form.amount, form.unit) : null;
+      const est = await estimateMacrosWithAI(query, quantityLabel);
+      setForm((f) => ({
+        ...f,
+        protein: String(Math.round(est.protein)),
+        fat: String(Math.round(est.fat)),
+        carbs: String(Math.round(est.carbs))
+      }));
+      setCalc({ status: "estimated", label: `AI estimate \xB7 ${est.servingDescription || quantityLabel || "1 serving"} \u2014 check before logging` });
+    } catch (e) {
+      setCalc({ status: "error", label: "Not in the food list \u2014 enter macros manually below." });
+    }
+  }
+  async function addMeal() {
+    if (!form.name.trim()) return;
+    const p = Number(form.protein) || 0;
+    const f = Number(form.fat) || 0;
+    const c = Number(form.carbs) || 0;
+    const hasServings = form.servings.trim() !== "" && Number(form.servings) > 0;
+    const hasAmount = form.amount.trim() !== "" && Number(form.amount) > 0;
+    const quantity = hasServings ? formatAmount(form.servings, "serving") : hasAmount ? formatAmount(form.amount, form.unit) : null;
+    const meal = {
+      name: form.name.trim(),
+      quantity,
+      protein: p,
+      fat: f,
+      carbs: c,
+      calories: Math.round(p * 4 + f * 9 + c * 4)
+    };
+    const nextMeals = [...meals, meal];
+    const next = { ...dailyLogs, [today]: { ...todayLog, meals: nextMeals } };
+    await saveDailyLogs(next);
+    setForm({ name: "", amount: "", unit: "g", servings: "", protein: "", fat: "", carbs: "" });
+    setCalc({ status: "idle", label: "" });
+  }
+  async function removeMeal(idx) {
+    const nextMeals = meals.filter((_, i) => i !== idx);
+    const next = { ...dailyLogs, [today]: { ...todayLog, meals: nextMeals } };
+    await saveDailyLogs(next);
+  }
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement(Card, { className: ifStatus.tone === "open" ? "bg-steel-dim border-none" : "bg-surface2" }, /* @__PURE__ */ React.createElement("div", { className: "font-display text-sm uppercase tracking-wide text-ink" }, ifStatus.label), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-0.5" }, "16:8 window \xB7 6:30 AM \u2013 2:30 PM")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today vs. target"), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ React.createElement(MacroBar, { label: "Protein", current: totals.protein, target: macroTargets.protein, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Fat", current: totals.fat, target: macroTargets.fat, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Carbs", current: totals.carbs, target: macroTargets.carbs, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Calories", current: totals.calories, target: macroTargets.calories, unit: "", accent: "var(--amber)" }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Log a meal"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "What did you eat?",
+      value: form.name,
+      onChange: (e) => {
+        setForm((f) => ({ ...f, name: e.target.value }));
+        setCalc({ status: "idle", label: "" });
+      },
+      onKeyDown: (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleCalculate();
+        }
+      },
+      className: "w-full font-body bg-surface2 border border-line rounded-lg px-3 py-2 text-sm text-ink"
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "decimal",
+      placeholder: "Number of servings",
+      value: form.servings,
+      onChange: (e) => setForm((f) => ({ ...f, servings: e.target.value })),
+      className: "w-full font-mono bg-surface2 border border-line rounded-lg px-2 py-2 text-sm text-ink"
+    }
+  ), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "decimal",
+      placeholder: "Amount",
+      value: form.amount,
+      onChange: (e) => setForm((f) => ({ ...f, amount: e.target.value })),
+      className: "flex-1 font-mono bg-surface2 border border-line rounded-lg px-2 py-2 text-sm text-ink w-full"
+    }
+  ), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1 shrink-0" }, ["g", "oz", "cup"].map((u) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: u,
+      onClick: () => setForm((f) => ({ ...f, unit: u })),
+      className: "px-2.5 py-2 rounded-lg font-mono text-sm border",
+      style: {
+        background: form.unit === u ? "var(--steel)" : "var(--surface2)",
+        borderColor: form.unit === u ? "var(--steel)" : "var(--line)",
+        color: form.unit === u ? "#1B1A18" : "var(--ink)"
+      }
+    },
+    u
+  )))), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: handleCalculate,
+      disabled: !form.name.trim() || calc.status === "loading",
+      className: "w-full bg-surface2 border border-line rounded-lg py-2 font-display text-xs uppercase tracking-wide text-ink flex items-center justify-center gap-1.5 disabled:opacity-50"
+    },
+    /* @__PURE__ */ React.createElement(SparkleIcon, { size: 14 }),
+    calc.status === "loading" ? "Calculating..." : "Auto-fill macros"
+  ), calc.label && /* @__PURE__ */ React.createElement("div", { className: `font-body text-xs ${calc.status === "error" ? "text-warn" : "text-muted"}` }, calc.label), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-3 gap-2" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      placeholder: "Protein g",
+      value: form.protein,
+      onChange: (e) => setForm((f) => ({ ...f, protein: e.target.value })),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-2 text-sm text-ink w-full"
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      placeholder: "Fat g",
+      value: form.fat,
+      onChange: (e) => setForm((f) => ({ ...f, fat: e.target.value })),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-2 text-sm text-ink w-full"
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      placeholder: "Carbs g",
+      value: form.carbs,
+      onChange: (e) => setForm((f) => ({ ...f, carbs: e.target.value })),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-2 text-sm text-ink w-full"
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", { className: "font-mono text-xs text-muted" }, "\u2248 ", Math.round(previewCalories), " kcal (4/4/9)"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: addMeal,
+      className: "bg-steel rounded-lg px-4 py-2 font-display text-xs uppercase tracking-wide flex items-center gap-1",
+      style: { color: "#1B1A18" }
+    },
+    /* @__PURE__ */ React.createElement(PlusIcon, { size: 14 }),
+    " Add"
+  )))), meals.length > 0 && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today's meals"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, meals.map((m, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "flex items-center justify-between border-b border-line last:border-none pb-2 last:pb-0" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-ink" }, m.name, m.quantity && /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " \xB7 ", m.quantity)), /* @__PURE__ */ React.createElement("div", { className: "font-mono text-[11px] text-muted" }, "P", m.protein, " F", m.fat, " C", m.carbs, " \xB7 ", m.calories, " kcal")), /* @__PURE__ */ React.createElement("button", { onClick: () => removeMeal(i), className: "text-muted p-1", "aria-label": "Remove meal" }, /* @__PURE__ */ React.createElement(TrashIcon, { size: 15 })))))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => setShowFoods((s) => !s),
+      className: "w-full flex items-center justify-between"
+    },
+    /* @__PURE__ */ React.createElement(SectionLabel, null, "Dairy-free food list"),
+    showFoods ? /* @__PURE__ */ React.createElement(ChevronUpIcon, { size: 16, className: "text-muted" }) : /* @__PURE__ */ React.createElement(ChevronDownIcon, { size: 16, className: "text-muted" })
+  ), showFoods && /* @__PURE__ */ React.createElement("div", { className: "space-y-2 mt-1" }, DAIRY_FREE_FOODS.map((g) => /* @__PURE__ */ React.createElement("div", { key: g.group }, /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs font-semibold text-ink" }, g.group), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted leading-relaxed" }, g.items))))));
+}
+function ProgressTab({ dailyLogs, saveDailyLogs, appMeta, saveAppMeta, macroTargets, maintCalories }) {
+  const today = todayStr();
+  const todayLog = dailyLogs[today] || { meals: [], weight: null };
+  const [weightInput, setWeightInput] = useState(todayLog.weight != null ? String(todayLog.weight) : "");
+  const weightEntries = useMemo(
+    () => Object.entries(dailyLogs).filter(([, log]) => log && typeof log.weight === "number").sort((a, b) => a[0] < b[0] ? -1 : 1),
+    [dailyLogs]
+  );
+  function rollingAvg(entries, idx, window = 7) {
+    const start = Math.max(0, idx - window + 1);
+    const slice = entries.slice(start, idx + 1);
+    return slice.reduce((s, [, l]) => s + l.weight, 0) / slice.length;
+  }
+  const chartData = weightEntries.map(([date, log], idx) => ({
+    date: date.slice(5),
+    weight: log.weight,
+    avg: fmt1(rollingAvg(weightEntries, idx))
+  })).slice(-21);
+  const last14 = weightEntries.slice(-14);
+  let checkIn = null;
+  if (last14.length >= 14) {
+    const older = last14.slice(0, 7).map(([, l]) => l.weight);
+    const recent = last14.slice(7, 14).map(([, l]) => l.weight);
+    const avgOlder = older.reduce((s, v) => s + v, 0) / 7;
+    const avgRecent = recent.reduce((s, v) => s + v, 0) / 7;
+    const drop = avgOlder - avgRecent;
+    let action;
+    if (drop < 0.75) action = "Dropped less than 0.75 lb over 2 weeks \u2014 cut 100-150 kcal (take it from carbs first).";
+    else if (drop / 2 > 1.5) action = "Losing faster than 1.5 lb/week \u2014 add 100-150 kcal back.";
+    else action = "On pace \u2014 no change needed.";
+    checkIn = { avgOlder: fmt1(avgOlder), avgRecent: fmt1(avgRecent), drop: fmt1(drop), action };
+  }
+  async function saveWeight() {
+    const w = Number(weightInput);
+    if (!weightInput || isNaN(w)) return;
+    const next = { ...dailyLogs, [today]: { ...todayLog, weight: w } };
+    await saveDailyLogs(next);
+  }
+  const blockStart = appMeta.blockStart;
+  const blockLength = appMeta.blockLength || 6;
+  const dietBreakWeeks = appMeta.dietBreakWeeks || 9;
+  let weekInBlock = null;
+  let isDeload = false;
+  let weeksSinceStart = null;
+  let isDietBreak = false;
+  if (blockStart) {
+    const days = daysBetween(blockStart, today);
+    weeksSinceStart = Math.floor(Math.max(0, days) / 7) + 1;
+    weekInBlock = (weeksSinceStart - 1) % blockLength + 1;
+    isDeload = weekInBlock === blockLength;
+    isDietBreak = weeksSinceStart % dietBreakWeeks === 0;
+  }
+  const maintFactor = maintCalories / macroTargets.calories;
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today's weight"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "decimal",
+      placeholder: "lbs",
+      value: weightInput,
+      onChange: (e) => setWeightInput(e.target.value),
+      className: "flex-1 font-mono bg-surface2 border border-line rounded-lg px-3 py-2 text-sm text-ink"
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: saveWeight,
+      className: "bg-sage rounded-lg px-4 py-2 font-display text-xs uppercase tracking-wide",
+      style: { color: "#1B1A18" }
+    },
+    "Save"
+  )), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-2" }, "Weigh first thing, same conditions. Daily weight is noisy \u2014 the chart below tracks the weekly average.")), chartData.length > 1 && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Last ", chartData.length, " logged days"), /* @__PURE__ */ React.createElement(SimpleLineChart, { data: chartData, height: 180 }), /* @__PURE__ */ React.createElement("div", { className: "font-body text-[11px] text-muted mt-1" }, "Gray = daily \xB7 Green = 7-day average")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "2-week check-in"), checkIn ? /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "font-mono text-sm text-ink" }, checkIn.avgOlder, " lb \u2192 ", checkIn.avgRecent, " lb", /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", checkIn.drop >= 0 ? "-" : "+", Math.abs(checkIn.drop), " lb)")), /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-ink" }, checkIn.action)) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-muted" }, "Log weight for ", 14 - weightEntries.length > 0 ? 14 - weightEntries.length : 0, " more days to run a check-in.")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Training block"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Block started"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "date",
+      value: blockStart || "",
+      onChange: (e) => saveAppMeta({ ...appMeta, blockStart: e.target.value }),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink flex-1"
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Deload every"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1.5" }, [5, 6].map((n) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: n,
+      onClick: () => saveAppMeta({ ...appMeta, blockLength: n }),
+      className: "px-3 py-1.5 rounded-lg font-mono text-sm border",
+      style: {
+        background: blockLength === n ? "var(--amber)" : "var(--surface2)",
+        borderColor: blockLength === n ? "var(--amber)" : "var(--line)",
+        color: blockLength === n ? "#1B1A18" : "var(--ink)"
+      }
+    },
+    n,
+    "wk"
+  )))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Diet break every"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      value: dietBreakWeeks,
+      onChange: (e) => saveAppMeta({ ...appMeta, dietBreakWeeks: Number(e.target.value) || 9 }),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-16"
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted" }, "weeks"))), blockStart && /* @__PURE__ */ React.createElement("div", { className: "mt-3 space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "font-mono text-sm text-ink" }, "Week ", weekInBlock, " of ", blockLength, " \xB7 week ", weeksSinceStart, " overall"), isDeload && /* @__PURE__ */ React.createElement("div", { className: "bg-amber-dim rounded-lg p-2.5 font-body text-sm text-ink" }, "Deload week. Cut all working sets by one, stay 2 reps short of failure."), isDietBreak && /* @__PURE__ */ React.createElement("div", { className: "bg-steel-dim rounded-lg p-2.5 font-body text-sm text-ink" }, "Diet break week. Eat at maintenance, ~", maintCalories, " kcal, same macro ratio scaled up (~", Math.round(macroTargets.protein * maintFactor), "g protein / ~", Math.round(macroTargets.fat * maintFactor), "g fat / ~", Math.round(macroTargets.carbs * maintFactor), "g carbs)."))));
+}
+const DEFAULT_META = { cycleDay: 1, blockStart: null, blockLength: 6, dietBreakWeeks: 9 };
+function ProfileTab({ profile, saveProfile }) {
+  const tdee = calcTDEE(profile);
+  const macros = calcMacroTargets(profile);
+  const isComplete = profile.age && profile.heightFt && profile.weightLbs;
+  function field(label, key, opts = {}) {
+    return /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, label), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: opts.type || "number",
+        inputMode: opts.inputMode || "numeric",
+        placeholder: opts.placeholder || "",
+        value: profile[key] || "",
+        onChange: (e) => saveProfile({ ...profile, [key]: e.target.value }),
+        className: "flex-1 font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink"
+      }
+    ), opts.unit && /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted shrink-0" }, opts.unit));
+  }
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Sex"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, ["male", "female"].map((s) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: s,
+      onClick: () => saveProfile({ ...profile, sex: s }),
+      className: "flex-1 py-2.5 rounded-xl font-display text-sm uppercase tracking-wide border",
+      style: {
+        background: profile.sex === s ? "var(--amber)" : "var(--surface2)",
+        borderColor: profile.sex === s ? "var(--amber)" : "var(--line)",
+        color: profile.sex === s ? "#1B1A18" : "var(--ink)"
+      }
+    },
+    s.charAt(0).toUpperCase() + s.slice(1)
+  )))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Body stats"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, field("Age", "age", { unit: "yrs" }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Height"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "numeric",
+      placeholder: "ft",
+      value: profile.heightFt || "",
+      onChange: (e) => saveProfile({ ...profile, heightFt: e.target.value }),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-16"
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted" }, "ft"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "numeric",
+      placeholder: "in",
+      value: profile.heightIn || "",
+      onChange: (e) => saveProfile({ ...profile, heightIn: e.target.value }),
+      className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-16"
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted" }, "in")), field("Body weight", "weightLbs", { unit: "lbs" }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Activity level"), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, Object.entries(ACTIVITY_LABELS).map(([key, label]) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key,
+      onClick: () => saveProfile({ ...profile, activityLevel: key }),
+      className: "w-full text-left px-3 py-2.5 rounded-xl border font-body text-sm",
+      style: {
+        background: profile.activityLevel === key ? "var(--steel-dim)" : "var(--surface2)",
+        borderColor: profile.activityLevel === key ? "var(--steel)" : "var(--line)",
+        color: "var(--ink)"
+      }
+    },
+    /* @__PURE__ */ React.createElement("span", { style: { color: profile.activityLevel === key ? "var(--steel)" : "var(--ink-muted)" } }, "\u25CF "),
+    label
+  )))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Phase / Goal"), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, Object.entries(PHASE_CONFIGS).map(([key, phase]) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key,
+      onClick: () => saveProfile({ ...profile, goal: key }),
+      className: "w-full text-left px-3 py-2.5 rounded-xl border",
+      style: {
+        background: profile.goal === key ? "var(--amber-dim)" : "var(--surface2)",
+        borderColor: profile.goal === key ? "var(--amber)" : "var(--line)",
+        color: "var(--ink)"
+      }
+    },
+    /* @__PURE__ */ React.createElement("div", { className: "font-display text-sm" }, phase.emoji, " ", phase.label),
+    /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-0.5" }, phase.description)
+  )))), isComplete && tdee ? /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Your personalised targets \u2014 ", PHASE_CONFIGS[profile.goal || "cut"].label), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "TDEE (maintenance)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, tdee, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Cut target (\u2212500)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.calories, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "border-t border-line my-1.5" }), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Protein"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.protein, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Fat"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.fat, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Carbs"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.carbs, "g"))), profile.sex === "female" && /* @__PURE__ */ React.createElement("div", { className: "mt-3 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--steel-dim)" } }, "Female program active \u2014 a completely separate 7-day structure optimised for glute development and toning. Blue notes on exercises contain female-specific cues."), profile.goal && profile.goal !== "lean_bulk" && /* @__PURE__ */ React.createElement("div", { className: "mt-2 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--amber-dim)" } }, PHASE_CONFIGS[profile.goal].emoji, " ", PHASE_CONFIGS[profile.goal].label, " phase active \u2014 rep ranges and exercise notes are adjusted. Look for the amber notes in your workouts.")) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted text-center pt-2" }, "Fill in age, height, and body weight above to generate personalised targets."));
+}
+function App() {
+  const [loaded, setLoaded] = useState(false);
+  const [tab, setTab] = useState("workout");
+  const [appMeta, setAppMeta] = useState(DEFAULT_META);
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [workoutLogs, setWorkoutLogs] = useState({});
+  const [dailyLogs, setDailyLogs] = useState({});
+  useEffect(() => {
+    let cancelled = false;
+    let settled = false;
+    function finish() {
+      if (!cancelled && !settled) {
+        settled = true;
+        setLoaded(true);
+      }
+    }
+    const timeoutId = setTimeout(finish, 4e3);
+    async function load() {
+      try {
+        const [meta, wl, dl, prof] = await Promise.all([
+          storageGet("app-meta"),
+          storageGet("workout-logs"),
+          storageGet("daily-logs"),
+          storageGet("profile")
+        ]);
+        if (cancelled || settled) return;
+        if (meta) {
+          try {
+            setAppMeta({ ...DEFAULT_META, ...JSON.parse(meta) });
+          } catch (e) {
+          }
+        }
+        if (wl) {
+          try {
+            setWorkoutLogs(JSON.parse(wl));
+          } catch (e) {
+          }
+        }
+        if (dl) {
+          try {
+            setDailyLogs(JSON.parse(dl));
+          } catch (e) {
+          }
+        }
+        if (prof) {
+          try {
+            setProfile({ ...DEFAULT_PROFILE, ...JSON.parse(prof) });
+          } catch (e) {
+          }
+        }
+      } catch (e) {
+      } finally {
+        clearTimeout(timeoutId);
+        finish();
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, []);
+  async function saveAppMeta(next) {
+    setAppMeta(next);
+    await storageSet("app-meta", JSON.stringify(next));
+  }
+  async function saveWorkoutLogs(next) {
+    setWorkoutLogs(next);
+    await storageSet("workout-logs", JSON.stringify(next));
+  }
+  async function saveDailyLogs(next) {
+    setDailyLogs(next);
+    await storageSet("daily-logs", JSON.stringify(next));
+  }
+  async function saveProfile(next) {
+    setProfile(next);
+    await storageSet("profile", JSON.stringify(next));
+  }
+  const macroTargets = calcMacroTargets(profile);
+  const maintCalories = calcMaintCalories(profile);
+  const TABS = [
+    { id: "workout", label: "Workout", Icon: DumbbellIcon },
+    { id: "nutrition", label: "Nutrition", Icon: UtensilsIcon },
+    { id: "progress", label: "Progress", Icon: TrendingUpIcon },
+    { id: "profile", label: "Profile", Icon: UserIcon }
+  ];
+  return /* @__PURE__ */ React.createElement("div", { className: "bg-app min-h-screen text-ink font-body", style: { minHeight: "100vh" } }, /* @__PURE__ */ React.createElement("style", null, `
+        :root {
+          --bg: #1B1A18;
+          --surface: #242220;
+          --surface2: #2C2924;
+          --line: #3A352F;
+          --ink: #EDEAE3;
+          --ink-muted: #9C958A;
+          --amber: #E08A35;
+          --amber-dim: rgba(224,138,53,0.14);
+          --steel: #5B89A6;
+          --steel-dim: rgba(91,137,166,0.14);
+          --sage: #7E9B6F;
+          --warn: #C4604A;
+        }
+        .font-display { font-family: ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif; font-weight: 600; letter-spacing: 0.02em; }
+        .font-body { font-family: ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+        .bg-app { background: var(--bg); }
+        .bg-surface { background: var(--surface); }
+        .bg-surface2 { background: var(--surface2); }
+        .border-line { border-color: var(--line); }
+        .text-ink { color: var(--ink); }
+        .text-muted { color: var(--ink-muted); }
+        .text-warn { color: var(--warn); }
+        .bg-amber { background: var(--amber); }
+        .bg-amber-dim { background: var(--amber-dim); }
+        .bg-steel { background: var(--steel); }
+        .bg-steel-dim { background: var(--steel-dim); }
+        .bg-sage { background: var(--sage); }
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        input { outline: none; }
+        input:focus { box-shadow: 0 0 0 2px var(--amber); }
+      `), /* @__PURE__ */ React.createElement("header", { className: "px-4 pt-5 pb-3 sticky top-0 bg-app z-10 border-b border-line" }, /* @__PURE__ */ React.createElement("div", { className: "font-display text-xl font-semibold tracking-wide" }, "CYCLE LOG"), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted" }, (/* @__PURE__ */ new Date()).toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }))), /* @__PURE__ */ React.createElement("main", { className: "px-4 py-4 pb-24 max-w-md mx-auto" }, !loaded ? /* @__PURE__ */ React.createElement("div", { className: "text-center text-muted font-body text-sm pt-10" }, "Loading...") : tab === "workout" ? /* @__PURE__ */ React.createElement(
+    WorkoutTab,
+    {
+      appMeta,
+      saveAppMeta,
+      workoutLogs,
+      saveWorkoutLogs,
+      profile
+    }
+  ) : tab === "nutrition" ? /* @__PURE__ */ React.createElement(
+    NutritionTab,
+    {
+      dailyLogs,
+      saveDailyLogs,
+      macroTargets
+    }
+  ) : tab === "progress" ? /* @__PURE__ */ React.createElement(
+    ProgressTab,
+    {
+      dailyLogs,
+      saveDailyLogs,
+      appMeta,
+      saveAppMeta,
+      macroTargets,
+      maintCalories
+    }
+  ) : /* @__PURE__ */ React.createElement(ProfileTab, { profile, saveProfile })), /* @__PURE__ */ React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 bg-surface border-t border-line" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md mx-auto flex" }, TABS.map((t) => {
+    const active = tab === t.id;
+    const Icon = t.Icon;
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: t.id,
+        onClick: () => setTab(t.id),
+        className: "flex-1 flex flex-col items-center gap-1 py-2.5",
+        style: { color: active ? "var(--amber)" : "var(--ink-muted)" }
+      },
+      /* @__PURE__ */ React.createElement(Icon, { size: 20 }),
+      /* @__PURE__ */ React.createElement("span", { className: "font-display text-[10px] uppercase tracking-wide" }, t.label)
+    );
+  }))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
+
+  </script>
+</body>
+</html>
