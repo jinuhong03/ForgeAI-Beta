@@ -208,6 +208,8 @@ const DEFAULT_PROFILE = {
   heightFt: "",
   heightIn: "",
   weightLbs: "",
+  goalWeightLbs: "",
+  targetDate: "",
   activityLevel: "moderate",
   goal: "cut"
 };
@@ -957,7 +959,7 @@ function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
     showFoods ? /* @__PURE__ */ React.createElement(ChevronUpIcon, { size: 16, className: "text-muted" }) : /* @__PURE__ */ React.createElement(ChevronDownIcon, { size: 16, className: "text-muted" })
   ), showFoods && /* @__PURE__ */ React.createElement("div", { className: "space-y-2 mt-1" }, DAIRY_FREE_FOODS.map((g) => /* @__PURE__ */ React.createElement("div", { key: g.group }, /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs font-semibold text-ink" }, g.group), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted leading-relaxed" }, g.items))))));
 }
-function ProgressTab({ dailyLogs, saveDailyLogs, appMeta, saveAppMeta, macroTargets, maintCalories }) {
+function ProgressTab({ dailyLogs, saveDailyLogs, appMeta, saveAppMeta, macroTargets, maintCalories, profile }) {
   const today = todayStr();
   const todayLog = dailyLogs[today] || { meals: [], weight: null };
   const [weightInput, setWeightInput] = useState(todayLog.weight != null ? String(todayLog.weight) : "");
@@ -995,6 +997,54 @@ function ProgressTab({ dailyLogs, saveDailyLogs, appMeta, saveAppMeta, macroTarg
     const next = { ...dailyLogs, [today]: { ...todayLog, weight: w } };
     await saveDailyLogs(next);
   }
+  const goalWeight = Number(profile == null ? void 0 : profile.goalWeightLbs);
+  const currentAvg = weightEntries.length > 0 ? fmt1(rollingAvg(weightEntries, weightEntries.length - 1)) : null;
+  let projection = null;
+  if (goalWeight && currentAvg !== null) {
+    const lbsToGo = fmt1(currentAvg - goalWeight);
+    if (lbsToGo <= 0) {
+      projection = { reached: true };
+    } else {
+      let weeklyRate = null;
+      let rateSource = "theoretical";
+      if (weightEntries.length >= 14) {
+        const avgOlder = rollingAvg(weightEntries, weightEntries.length - 14);
+        const avgRecent = rollingAvg(weightEntries, weightEntries.length - 1);
+        const twoWeekDrop = avgOlder - avgRecent;
+        weeklyRate = fmt1(twoWeekDrop / 2);
+        rateSource = "actual";
+      } else {
+        weeklyRate = 1;
+      }
+      let projectedDate = null;
+      let weeksToGo = null;
+      let paceNote = null;
+      if (weeklyRate > 0) {
+        weeksToGo = Math.ceil(lbsToGo / weeklyRate);
+        const d = /* @__PURE__ */ new Date();
+        d.setDate(d.getDate() + weeksToGo * 7);
+        projectedDate = d.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
+        if (profile == null ? void 0 : profile.targetDate) {
+          const target = /* @__PURE__ */ new Date(profile.targetDate + "T00:00:00");
+          const projected = /* @__PURE__ */ new Date();
+          projected.setDate(projected.getDate() + weeksToGo * 7);
+          const diffDays = Math.round((target - projected) / 864e5);
+          if (diffDays >= 7) paceNote = { type: "ahead", days: diffDays };
+          else if (diffDays < -7) {
+            paceNote = { type: "behind", days: Math.abs(diffDays) };
+            const daysToTarget = Math.max(1, Math.round((target - /* @__PURE__ */ new Date()) / 864e5));
+            const neededWeeklyRate = fmt1(lbsToGo / daysToTarget * 7);
+            paceNote.neededRate = neededWeeklyRate;
+          } else {
+            paceNote = { type: "ontrack" };
+          }
+        }
+      } else {
+        paceNote = { type: "stalled" };
+      }
+      projection = { lbsToGo, weeklyRate, weeksToGo, projectedDate, rateSource, paceNote };
+    }
+  }
   const blockStart = appMeta.blockStart;
   const blockLength = appMeta.blockLength || 6;
   const dietBreakWeeks = appMeta.dietBreakWeeks || 9;
@@ -1028,7 +1078,20 @@ function ProgressTab({ dailyLogs, saveDailyLogs, appMeta, saveAppMeta, macroTarg
       style: { color: "#1B1A18" }
     },
     "Save"
-  )), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-2" }, "Weigh first thing, same conditions. Daily weight is noisy \u2014 the chart below tracks the weekly average.")), chartData.length > 1 && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Last ", chartData.length, " logged days"), /* @__PURE__ */ React.createElement(SimpleLineChart, { data: chartData, height: 180 }), /* @__PURE__ */ React.createElement("div", { className: "font-body text-[11px] text-muted mt-1" }, "Gray = daily \xB7 Green = 7-day average")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "2-week check-in"), checkIn ? /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "font-mono text-sm text-ink" }, checkIn.avgOlder, " lb \u2192 ", checkIn.avgRecent, " lb", /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", checkIn.drop >= 0 ? "-" : "+", Math.abs(checkIn.drop), " lb)")), /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-ink" }, checkIn.action)) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-muted" }, "Log weight for ", 14 - weightEntries.length > 0 ? 14 - weightEntries.length : 0, " more days to run a check-in.")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Training block"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Block started"), /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-2" }, "Weigh first thing, same conditions. Daily weight is noisy \u2014 the chart below tracks the weekly average.")), chartData.length > 1 && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Last ", chartData.length, " logged days"), /* @__PURE__ */ React.createElement(SimpleLineChart, { data: chartData, height: 180 }), /* @__PURE__ */ React.createElement("div", { className: "font-body text-[11px] text-muted mt-1" }, "Gray = daily \xB7 Green = 7-day average")), projection && /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Goal weight projection"), projection.reached ? /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-ink" }, "\u{1F389} You've reached your goal weight of ", goalWeight, " lbs!") : /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Current avg"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, currentAvg, " lbs")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Goal weight"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, goalWeight, " lbs")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Lbs to go"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, projection.lbsToGo, " lbs")), /* @__PURE__ */ React.createElement("div", { className: "border-t border-line my-1" }), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Weekly loss rate"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, projection.weeklyRate > 0 ? `${projection.weeklyRate} lb/wk` : "No loss yet", /* @__PURE__ */ React.createElement("span", { className: "text-muted text-xs" }, " (", projection.rateSource, ")"))), projection.weeksToGo && /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Est. completion"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, projection.weeksToGo, " wks \xB7 ", projection.projectedDate)), projection.paceNote && /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      className: "mt-2 px-2.5 py-2 rounded-lg font-body text-xs",
+      style: {
+        background: projection.paceNote.type === "ahead" ? "var(--steel-dim)" : projection.paceNote.type === "behind" ? "var(--amber-dim)" : projection.paceNote.type === "stalled" ? "var(--amber-dim)" : "var(--steel-dim)",
+        color: "var(--ink)"
+      }
+    },
+    projection.paceNote.type === "ahead" && `\u2705 ${projection.paceNote.days} days ahead of your target date \u2014 on track.`,
+    projection.paceNote.type === "behind" && `\u26A0\uFE0F ${projection.paceNote.days} days behind your target date. You'd need to lose ${projection.paceNote.neededRate} lb/week to hit it \u2014 consider tightening the deficit.`,
+    projection.paceNote.type === "ontrack" && `\u2705 Right on pace for your target date.`,
+    projection.paceNote.type === "stalled" && `\u26A0\uFE0F No weight loss detected recently \u2014 review your calorie intake.`
+  ))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "2-week check-in"), checkIn ? /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "font-mono text-sm text-ink" }, checkIn.avgOlder, " lb \u2192 ", checkIn.avgRecent, " lb", /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, " (", checkIn.drop >= 0 ? "-" : "+", Math.abs(checkIn.drop), " lb)")), /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-ink" }, checkIn.action)) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-sm text-muted" }, "Log weight for ", 14 - weightEntries.length > 0 ? 14 - weightEntries.length : 0, " more days to run a check-in.")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Training block"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Block started"), /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "date",
@@ -1111,7 +1174,15 @@ function ProfileTab({ profile, saveProfile }) {
       onChange: (e) => saveProfile({ ...profile, heightIn: e.target.value }),
       className: "font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink w-16"
     }
-  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted" }, "in")), field("Body weight", "weightLbs", { unit: "lbs" }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Activity level"), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, Object.entries(ACTIVITY_LABELS).map(([key, label]) => /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted" }, "in")), field("Body weight", "weightLbs", { unit: "lbs" }), field("Goal weight", "goalWeightLbs", { unit: "lbs" }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Target date"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "date",
+      value: profile.targetDate || "",
+      onChange: (e) => saveProfile({ ...profile, targetDate: e.target.value }),
+      className: "flex-1 font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink"
+    }
+  )))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Activity level"), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" }, Object.entries(ACTIVITY_LABELS).map(([key, label]) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key,
@@ -1284,7 +1355,8 @@ function App() {
       appMeta,
       saveAppMeta,
       macroTargets,
-      maintCalories
+      maintCalories,
+      profile
     }
   ) : /* @__PURE__ */ React.createElement(ProfileTab, { profile, saveProfile })), /* @__PURE__ */ React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 bg-surface border-t border-line" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-md mx-auto flex" }, TABS.map((t) => {
     const active = tab === t.id;
