@@ -758,7 +758,8 @@ const SUGGEST_PROTEINS = [
   { name: "Tuna (canned in water)", p: 26, f: 1, c: 0 },
   { name: "Lean ground beef", p: 26, f: 8, c: 0 },
   { name: "Top sirloin steak", p: 30, f: 8, c: 0 },
-  { name: "Shrimp", p: 24, f: 0.3, c: 0.2 }
+  { name: "Shrimp", p: 24, f: 0.3, c: 0.2 },
+  { name: "Tofu", p: 8, f: 4.8, c: 1.9 }
 ];
 const SUGGEST_CARBS = [
   { name: "White rice", serving: 158, p: 4.3, f: 0.4, c: 44.5 },
@@ -777,9 +778,39 @@ const SUGGEST_VEGS = [
   { name: "Spinach", p: 0.9, f: 0.1, c: 1.1 },
   { name: "Zucchini", p: 1.5, f: 0.4, c: 3.5 }
 ];
-function pick(arr, seed) {
-  return arr[Math.abs(seed) % arr.length];
-}
+const SUGGEST_FATS = [
+  { name: "Avocado", quantity: 100, unit: "g", p: 2, f: 15, c: 9 },
+  { name: "Almonds", quantity: 28, unit: "g", p: 6, f: 14, c: 6 },
+  { name: "Peanut butter", quantity: 32, unit: "g", p: 7, f: 16, c: 6 },
+  { name: "Walnuts", quantity: 28, unit: "g", p: 4, f: 18, c: 4 },
+  { name: "Olive oil", quantity: 14, unit: "g", p: 0, f: 14, c: 0 }
+];
+const BREAKFAST_PROTEIN_MAINS = [
+  { name: "Egg", quantity: 3, unit: "eggs", p: 18, f: 15, c: 2 },
+  { name: "Turkey breast", quantity: 100, unit: "g", p: 29, f: 2, c: 0 },
+  { name: "Chicken breast", quantity: 100, unit: "g", p: 31, f: 4, c: 0 },
+  { name: "Tofu", quantity: 150, unit: "g", p: 12, f: 7, c: 3 }
+];
+const BREAKFAST_EW_ALTS = [
+  { name: "Egg whites", quantity: 150, unit: "g", p: 17, f: 0, c: 1 },
+  { name: "Protein powder", quantity: 30, unit: "g", p: 24, f: 2, c: 3 },
+  { name: "Edamame", quantity: 155, unit: "g", p: 17, f: 8, c: 14 }
+];
+const BREAKFAST_CARBS = [
+  { name: "Oats", serving: 40, p: 5, f: 3, c: 27 },
+  { name: "Whole wheat bread", serving: 28, p: 4, f: 1, c: 12 },
+  { name: "Banana", serving: 118, p: 1.3, f: 0.4, c: 27 },
+  { name: "Sweet potato", serving: 150, p: 2, f: 0.1, c: 24 },
+  { name: "White rice", serving: 158, p: 4.3, f: 0.4, c: 44.5 }
+];
+const SUGGEST_BERRIES = [
+  { name: "Mixed berries", quantity: 1, unit: "cup", p: 1, f: 0, c: 17 },
+  { name: "Blueberries", quantity: 1, unit: "cup", p: 1, f: 1, c: 21 },
+  { name: "Strawberries", quantity: 1, unit: "cup", p: 1, f: 1, c: 12 },
+  { name: "Blackberries", quantity: 1, unit: "cup", p: 2, f: 1, c: 14 },
+  { name: "Banana", quantity: 1, unit: "medium", p: 1, f: 0, c: 27 },
+  { name: "Apple", quantity: 1, unit: "medium", p: 1, f: 0, c: 25 }
+];
 function buildProteinItem(catIdx, tP) {
   const food = SUGGEST_PROTEINS[catIdx % SUGGEST_PROTEINS.length];
   const g = Math.max(80, Math.round(tP / food.p * 100));
@@ -795,17 +826,52 @@ function buildVegItem(catIdx) {
   const food = SUGGEST_VEGS[catIdx % SUGGEST_VEGS.length];
   return { name: food.name, quantity: 1, unit: "cup", p: Math.round(food.p), f: 0, c: Math.round(food.c), cat: "veg", catIdx };
 }
-const BREAKFAST_CARBS = [
-  { name: "Oats", serving: 40, p: 5, f: 3, c: 27 },
-  { name: "Whole wheat bread", serving: 28, p: 4, f: 1, c: 12 },
-  { name: "Banana", serving: 118, p: 1.3, f: 0.4, c: 27 },
-  { name: "Sweet potato", serving: 150, p: 2, f: 0.1, c: 24 }
-];
-function buildBreakfastCarbItem(catIdx, tC) {
+function buildFatItem(catIdx, tF) {
+  const food = SUGGEST_FATS[catIdx % SUGGEST_FATS.length];
+  const mult = Math.max(1, Math.round(tF / food.f));
+  return { name: food.name, quantity: Math.round(food.quantity * mult), unit: food.unit, p: Math.round(mult * food.p), f: Math.round(mult * food.f), c: Math.round(mult * food.c), cat: "fat", catIdx };
+}
+function buildBfCarbItem(catIdx, tC) {
   const food = BREAKFAST_CARBS[catIdx % BREAKFAST_CARBS.length];
   const mult = Math.max(0.5, Math.round(tC / food.c * 2) / 2);
   const g = Math.round(mult * food.serving);
   return { name: food.name, quantity: g, unit: "g", p: Math.round(mult * food.p), f: Math.round(mult * food.f), c: Math.round(mult * food.c), cat: "bfCarb", catIdx };
+}
+function buildBfProteinItem(catIdx) {
+  const alt = BREAKFAST_PROTEIN_MAINS[catIdx % BREAKFAST_PROTEIN_MAINS.length];
+  return { ...alt, cat: "bfProtein", catIdx };
+}
+function buildBfEWItem(catIdx) {
+  const alt = BREAKFAST_EW_ALTS[catIdx % BREAKFAST_EW_ALTS.length];
+  return { ...alt, cat: "bfEW", catIdx };
+}
+function buildBerryItem(catIdx) {
+  const alt = SUGGEST_BERRIES[catIdx % SUGGEST_BERRIES.length];
+  return { ...alt, cat: "berry", catIdx };
+}
+function swapOneItem(item, meal) {
+  const next = (item.catIdx || 0) + 1;
+  const tP = meal.targets.p, tC = meal.targets.c, tF = meal.targets.f;
+  switch (item.cat) {
+    case "protein":
+      return buildProteinItem(next, tP);
+    case "carb":
+      return buildCarbItem(next, tC);
+    case "veg":
+      return buildVegItem(next);
+    case "fat":
+      return buildFatItem(next, tF);
+    case "bfCarb":
+      return buildBfCarbItem(next, tC);
+    case "bfProtein":
+      return buildBfProteinItem(next);
+    case "bfEW":
+      return buildBfEWItem(next);
+    case "berry":
+      return buildBerryItem(next);
+    default:
+      return item;
+  }
 }
 function generateMealPlan(macroTargets, seed = 0) {
   const dow = (/* @__PURE__ */ new Date()).getDay();
@@ -822,26 +888,21 @@ function generateMealPlan(macroTargets, seed = 0) {
     const tC = Math.round(macroTargets.carbs * slot.pct);
     const items = [];
     if (i === 0) {
-      const eggs = 3;
-      const ewGrams = 150;
-      items.push({ name: "Egg", quantity: eggs, unit: "eggs", p: eggs * 6, f: eggs * 5, c: Math.round(eggs * 0.6), swappable: false });
-      items.push({ name: "Egg whites", quantity: ewGrams, unit: "g", p: Math.round(ewGrams / 100 * 11), f: 0, c: 1, swappable: false });
-      items.push(buildBreakfastCarbItem((s + 1) % BREAKFAST_CARBS.length, tC));
-      items.push({ name: "Mixed berries", quantity: 1, unit: "cup", p: 1, f: 0, c: 17, swappable: false });
+      items.push(buildBfProteinItem(s % BREAKFAST_PROTEIN_MAINS.length));
+      items.push(buildBfEWItem(s % BREAKFAST_EW_ALTS.length));
+      items.push(buildBfCarbItem((s + 1) % BREAKFAST_CARBS.length, tC));
+      items.push(buildBerryItem(s % SUGGEST_BERRIES.length));
     } else {
       items.push(buildProteinItem((s + i) % SUGGEST_PROTEINS.length, tP));
       items.push(buildCarbItem((s + i + 1) % SUGGEST_CARBS.length, tC));
       items.push(buildVegItem((s + i + 2) % SUGGEST_VEGS.length));
-      const usedF = items.reduce((acc, it) => acc + (it.f || 0), 0);
+      const usedF = items.reduce((a, it) => a + (it.f || 0), 0);
       const remainF = tF - usedF;
-      if (remainF >= 8) {
-        const avG = Math.min(150, Math.round(remainF / 15 * 100));
-        items.push({ name: "Avocado", quantity: avG, unit: "g", p: Math.round(avG / 100 * 2), f: Math.round(avG / 100 * 15), c: Math.round(avG / 100 * 9), cat: "fat", catIdx: 0, swappable: false });
-      }
+      if (remainF >= 6) items.push(buildFatItem((s + i) % SUGGEST_FATS.length, remainF));
     }
-    const totP = items.reduce((s2, it) => s2 + (it.p || 0), 0);
-    const totF = items.reduce((s2, it) => s2 + (it.f || 0), 0);
-    const totC = items.reduce((s2, it) => s2 + (it.c || 0), 0);
+    const totP = items.reduce((a, it) => a + (it.p || 0), 0);
+    const totF = items.reduce((a, it) => a + (it.f || 0), 0);
+    const totC = items.reduce((a, it) => a + (it.c || 0), 0);
     return { label: slot.label, time: slot.time, targets: { p: tP, f: tF, c: tC }, items, totals: { p: totP, f: totF, c: totC, cal: Math.round(totP * 4 + totF * 9 + totC * 4) } };
   });
 }
@@ -854,7 +915,7 @@ function MealPlanCard({ plan, onLogMeal, onSwapItem }) {
       style: { color: "#1B1A18" }
     },
     "Log"
-  )), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5 mb-2" }, meal.items.map((item, itemIdx) => /* @__PURE__ */ React.createElement("div", { key: itemIdx, className: "flex items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-ink" }, item.name), /* @__PURE__ */ React.createElement("span", { className: "font-mono text-xs text-muted" }, " \xB7 ", item.quantity, item.unit)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 shrink-0" }, /* @__PURE__ */ React.createElement("span", { className: "font-mono text-[11px] text-muted" }, "P", item.p, " F", item.f, " C", item.c), item.swappable !== false && /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5 mb-2" }, meal.items.map((item, itemIdx) => /* @__PURE__ */ React.createElement("div", { key: itemIdx, className: "flex items-center justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-ink" }, item.name), /* @__PURE__ */ React.createElement("span", { className: "font-mono text-xs text-muted" }, " \xB7 ", item.quantity, item.unit)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 shrink-0" }, /* @__PURE__ */ React.createElement("span", { className: "font-mono text-[11px] text-muted" }, "P", item.p, " F", item.f, " C", item.c), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => onSwapItem(mealIdx, itemIdx),
@@ -965,27 +1026,16 @@ function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
     setMealPlan(generateMealPlan(macroTargets, newSeed));
   }
   function swapItem(mealIdx, itemIdx) {
-    setMealPlan((prev) => {
-      const next = prev.map((meal, mi) => {
-        if (mi !== mealIdx) return meal;
-        const nextItems = meal.items.map((item, ii) => {
-          if (ii !== itemIdx) return item;
-          const newCatIdx = item.catIdx + 1;
-          const tP = meal.targets.p;
-          const tC = meal.targets.c;
-          if (item.cat === "protein") return buildProteinItem(newCatIdx, tP);
-          if (item.cat === "carb") return buildCarbItem(newCatIdx, tC);
-          if (item.cat === "veg") return buildVegItem(newCatIdx);
-          if (item.cat === "bfCarb") return buildBreakfastCarbItem(newCatIdx, tC);
-          return item;
-        });
-        const totP = nextItems.reduce((s, it) => s + (it.p || 0), 0);
-        const totF = nextItems.reduce((s, it) => s + (it.f || 0), 0);
-        const totC = nextItems.reduce((s, it) => s + (it.c || 0), 0);
-        return { ...meal, items: nextItems, totals: { p: totP, f: totF, c: totC, cal: Math.round(totP * 4 + totF * 9 + totC * 4) } };
-      });
-      return next;
-    });
+    setMealPlan((prev) => prev.map((meal, mi) => {
+      if (mi !== mealIdx) return meal;
+      const nextItems = meal.items.map(
+        (item, ii) => ii === itemIdx ? swapOneItem(item, meal) : item
+      );
+      const totP = nextItems.reduce((a, it) => a + (it.p || 0), 0);
+      const totF = nextItems.reduce((a, it) => a + (it.f || 0), 0);
+      const totC = nextItems.reduce((a, it) => a + (it.c || 0), 0);
+      return { ...meal, items: nextItems, totals: { p: totP, f: totF, c: totC, cal: Math.round(totP * 4 + totF * 9 + totC * 4) } };
+    }));
   }
   async function logSuggestedMeal(meal) {
     const p = meal.totals.p;
