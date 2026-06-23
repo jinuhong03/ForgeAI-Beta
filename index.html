@@ -745,6 +745,105 @@ function WorkoutTab({ appMeta, saveAppMeta, workoutLogs, saveWorkoutLogs, profil
     " Complete day"
   )), savedAt && /* @__PURE__ */ React.createElement("div", { className: "font-mono text-[11px] text-muted text-center" }, "Saved ", savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })));
 }
+const SUGGEST_PROTEINS = [
+  { name: "Chicken breast", p: 31, f: 3.6, c: 0 },
+  { name: "Turkey breast", p: 29, f: 1.8, c: 0 },
+  { name: "Salmon", p: 25, f: 13, c: 0 },
+  { name: "Tuna (canned in water)", p: 26, f: 1, c: 0 },
+  { name: "Lean ground beef", p: 26, f: 8, c: 0 },
+  { name: "Top sirloin steak", p: 30, f: 8, c: 0 },
+  { name: "Shrimp", p: 24, f: 0.3, c: 0.2 }
+];
+const SUGGEST_CARBS = [
+  { name: "White rice", serving: 158, p: 4.3, f: 0.4, c: 44.5 },
+  { name: "Sweet potato", serving: 150, p: 2, f: 0.1, c: 24 },
+  { name: "Quinoa", serving: 185, p: 8, f: 3.6, c: 39 },
+  { name: "Black beans", serving: 172, p: 15, f: 0.9, c: 41 },
+  { name: "Brown rice", serving: 195, p: 5.5, f: 1.8, c: 45 },
+  { name: "Oats", serving: 40, p: 5, f: 3, c: 27 },
+  { name: "Potato", serving: 173, p: 4, f: 0.2, c: 37 }
+];
+const SUGGEST_VEGS = [
+  { name: "Broccoli", p: 2.6, f: 0.3, c: 6 },
+  { name: "Green beans", p: 1.8, f: 0.1, c: 7 },
+  { name: "Broccolini", p: 2.4, f: 0.3, c: 5.5 },
+  { name: "Asparagus", p: 2.9, f: 0.2, c: 5.2 },
+  { name: "Spinach", p: 0.9, f: 0.1, c: 1.1 },
+  { name: "Zucchini", p: 1.5, f: 0.4, c: 3.5 }
+];
+function pick(arr, seed) {
+  return arr[Math.abs(seed) % arr.length];
+}
+function generateMealPlan(macroTargets) {
+  const dow = (/* @__PURE__ */ new Date()).getDay();
+  const slots = [
+    { label: "Breakfast", time: "6:30 AM", pct: 0.35 },
+    { label: "Mid-Morning", time: "9:00 AM", pct: 0.25 },
+    { label: "Lunch", time: "11:30 AM", pct: 0.25 },
+    { label: "Pre-Close", time: "1:30 PM", pct: 0.15 }
+  ];
+  return slots.map((slot, i) => {
+    const tP = Math.round(macroTargets.protein * slot.pct);
+    const tF = Math.round(macroTargets.fat * slot.pct);
+    const tC = Math.round(macroTargets.carbs * slot.pct);
+    const items = [];
+    if (i === 0) {
+      const eggs = 2;
+      items.push({ name: "Egg", quantity: eggs, unit: "eggs", p: eggs * 6, f: eggs * 5, c: Math.round(eggs * 0.6) });
+      const ewGrams = Math.max(50, Math.round((tP - eggs * 6) / 11 * 100));
+      items.push({ name: "Egg whites", quantity: ewGrams, unit: "g", p: Math.round(ewGrams / 100 * 11), f: 0, c: 1 });
+      const oatServings = Math.max(0.5, Math.round(tC / 27 * 2) / 2);
+      const oatGrams = Math.round(oatServings * 40);
+      items.push({ name: "Oats", quantity: oatGrams, unit: "g", p: Math.round(oatServings * 5), f: Math.round(oatServings * 3), c: Math.round(oatServings * 27) });
+      items.push({ name: "Mixed berries", quantity: 1, unit: "cup", p: 1, f: 0, c: 17 });
+    } else {
+      const protein = pick(SUGGEST_PROTEINS, dow + i);
+      const proteinGrams = Math.max(80, Math.round(tP / protein.p * 100));
+      items.push({
+        name: protein.name,
+        quantity: proteinGrams,
+        unit: "g",
+        p: Math.round(proteinGrams / 100 * protein.p),
+        f: Math.round(proteinGrams / 100 * protein.f),
+        c: Math.round(proteinGrams / 100 * protein.c)
+      });
+      const carb = pick(SUGGEST_CARBS, dow + i + 1);
+      const carbServingMult = Math.max(0.5, Math.round(tC / carb.c * 2) / 2);
+      const carbGrams = Math.round(carbServingMult * carb.serving);
+      items.push({
+        name: carb.name,
+        quantity: carbGrams,
+        unit: "g",
+        p: Math.round(carbServingMult * carb.p),
+        f: Math.round(carbServingMult * carb.f),
+        c: Math.round(carbServingMult * carb.c)
+      });
+      const veg = pick(SUGGEST_VEGS, dow + i + 2);
+      items.push({ name: veg.name, quantity: 1, unit: "cup", p: Math.round(veg.p), f: 0, c: Math.round(veg.c) });
+      const usedF = items.reduce((s, it) => s + (it.f || 0), 0);
+      const remainF = tF - usedF;
+      if (remainF >= 8) {
+        const avGrams = Math.min(150, Math.round(remainF / 15 * 100));
+        items.push({ name: "Avocado", quantity: avGrams, unit: "g", p: Math.round(avGrams / 100 * 2), f: Math.round(avGrams / 100 * 15), c: Math.round(avGrams / 100 * 9) });
+      }
+    }
+    const totP = items.reduce((s, it) => s + (it.p || 0), 0);
+    const totF = items.reduce((s, it) => s + (it.f || 0), 0);
+    const totC = items.reduce((s, it) => s + (it.c || 0), 0);
+    return { label: slot.label, time: slot.time, items, totals: { p: totP, f: totF, c: totC, cal: Math.round(totP * 4 + totF * 9 + totC * 4) } };
+  });
+}
+function MealPlanCard({ plan, onLogMeal }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, plan.map((meal, i) => /* @__PURE__ */ React.createElement(Card, { key: i }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-baseline mb-2" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "font-display text-sm text-ink" }, meal.label), /* @__PURE__ */ React.createElement("span", { className: "font-mono text-xs text-muted ml-2" }, meal.time)), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => onLogMeal(meal),
+      className: "bg-steel rounded-lg px-3 py-1 font-display text-xs uppercase tracking-wide",
+      style: { color: "#1B1A18" }
+    },
+    "Log"
+  )), /* @__PURE__ */ React.createElement("div", { className: "space-y-1 mb-2" }, meal.items.map((item, j) => /* @__PURE__ */ React.createElement("div", { key: j, className: "flex justify-between font-body text-xs" }, /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, item.name, " ", /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "\xB7 ", item.quantity, item.unit)), /* @__PURE__ */ React.createElement("span", { className: "font-mono text-muted" }, "P", item.p, " F", item.f, " C", item.c)))), /* @__PURE__ */ React.createElement("div", { className: "border-t border-line pt-1.5 flex justify-between font-mono text-xs text-muted" }, /* @__PURE__ */ React.createElement("span", null, "P", meal.totals.p, " F", meal.totals.f, " C", meal.totals.c), /* @__PURE__ */ React.createElement("span", null, meal.totals.cal, " kcal")))));
+}
 function ifWindowStatus() {
   const now = /* @__PURE__ */ new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
@@ -759,6 +858,8 @@ function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
   const todayLog = dailyLogs[today] || { meals: [], weight: null };
   const meals = todayLog.meals || [];
   const [form, setForm] = useState({ name: "", amount: "", unit: "g", servings: "", protein: "", fat: "", carbs: "" });
+  const [mealPlan, setMealPlan] = useState(null);
+  const [showPlan, setShowPlan] = useState(false);
   const [showFoods, setShowFoods] = useState(false);
   const [calc, setCalc] = useState({ status: "idle", label: "" });
   const totals = meals.reduce(
@@ -837,6 +938,16 @@ function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
       setCalc({ status: "error", label: "Not in the food list \u2014 enter macros manually below." });
     }
   }
+  async function logSuggestedMeal(meal) {
+    const p = meal.totals.p;
+    const f = meal.totals.f;
+    const c = meal.totals.c;
+    const name = `${meal.label} \u2014 ${meal.items.map((it) => it.name).join(", ")}`;
+    const entry = { name, quantity: meal.time, protein: p, fat: f, carbs: c, calories: meal.totals.cal };
+    const nextMeals = [...meals, entry];
+    const next = { ...dailyLogs, [today]: { ...todayLog, meals: nextMeals } };
+    await saveDailyLogs(next);
+  }
   async function addMeal() {
     if (!form.name.trim()) return;
     const p = Number(form.protein) || 0;
@@ -864,7 +975,24 @@ function NutritionTab({ dailyLogs, saveDailyLogs, macroTargets }) {
     const next = { ...dailyLogs, [today]: { ...todayLog, meals: nextMeals } };
     await saveDailyLogs(next);
   }
-  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement(Card, { className: ifStatus.tone === "open" ? "bg-steel-dim border-none" : "bg-surface2" }, /* @__PURE__ */ React.createElement("div", { className: "font-display text-sm uppercase tracking-wide text-ink" }, ifStatus.label), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-0.5" }, "16:8 window \xB7 6:30 AM \u2013 2:30 PM")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today vs. target"), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ React.createElement(MacroBar, { label: "Protein", current: totals.protein, target: macroTargets.protein, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Fat", current: totals.fat, target: macroTargets.fat, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Carbs", current: totals.carbs, target: macroTargets.carbs, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Calories", current: totals.calories, target: macroTargets.calories, unit: "", accent: "var(--amber)" }))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Log a meal"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement(Card, { className: ifStatus.tone === "open" ? "bg-steel-dim border-none" : "bg-surface2" }, /* @__PURE__ */ React.createElement("div", { className: "font-display text-sm uppercase tracking-wide text-ink" }, ifStatus.label), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-0.5" }, "16:8 window \xB7 6:30 AM \u2013 2:30 PM")), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today vs. target"), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => {
+        const plan = generateMealPlan(macroTargets);
+        setMealPlan(plan);
+        setShowPlan(true);
+      },
+      className: "font-display text-xs uppercase tracking-wide px-3 py-1 rounded-lg border border-line text-muted -mt-1"
+    },
+    "Suggest meals"
+  )), /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ React.createElement(MacroBar, { label: "Protein", current: totals.protein, target: macroTargets.protein, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Fat", current: totals.fat, target: macroTargets.fat, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Carbs", current: totals.carbs, target: macroTargets.carbs, unit: "g", accent: "var(--steel)" }), /* @__PURE__ */ React.createElement(MacroBar, { label: "Calories", current: totals.calories, target: macroTargets.calories, unit: "", accent: "var(--amber)" }))), showPlan && mealPlan && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between mb-2" }, /* @__PURE__ */ React.createElement(SectionLabel, null, "Today's meal plan"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowPlan(false), className: "font-body text-xs text-muted" }, "Hide")), /* @__PURE__ */ React.createElement(
+    MealPlanCard,
+    {
+      plan: mealPlan,
+      onLogMeal: (meal) => logSuggestedMeal(meal)
+    }
+  )), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Log a meal"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "text",
