@@ -317,13 +317,22 @@ function calcMacroTargets(profile) {
   const phase = PHASE_CONFIGS[profile.goal] || PHASE_CONFIGS.cut;
   if (!tdee || !lbs) return MACRO_TARGETS_DEFAULT;
   const manualDelta = profile.calorieAdjust != null ? Number(profile.calorieAdjust) : null;
-  const delta = manualDelta != null ? -Math.abs(manualDelta) : phase.calorieDelta;
+  const isDeficit = phase.calorieDelta < 0 || manualDelta != null && phase.calorieDelta < 0;
+  const delta = manualDelta != null ? phase.calorieDelta < 0 ? -Math.abs(manualDelta) : Math.abs(manualDelta) : phase.calorieDelta;
   const cals = Math.max(1200, tdee + delta);
   const ratios = profile.sex === "male" ? phase.male : phase.female;
   const protein = Math.round(lbs * ratios.protein);
-  const fat = Math.round(lbs * ratios.fat);
-  const remainingCals = cals - protein * 4 - fat * 9;
-  const carbs = Math.max(50, Math.round(remainingCals / 4));
+  const proteinCals = protein * 4;
+  const baseCals = Math.max(1200, tdee + phase.calorieDelta);
+  const baseFat = Math.round(lbs * ratios.fat);
+  const baseRemainingCals = baseCals - proteinCals;
+  const baseFatCals = baseFat * 9;
+  const baseCarbCals = Math.max(0, baseRemainingCals - baseFatCals);
+  const totalFatCarb = baseFatCals + baseCarbCals;
+  const fatRatio = totalFatCarb > 0 ? baseFatCals / totalFatCarb : 0.4;
+  const remainingCals = Math.max(0, cals - proteinCals);
+  const fat = Math.max(20, Math.round(remainingCals * fatRatio / 9));
+  const carbs = Math.max(30, Math.round(remainingCals * (1 - fatRatio) / 4));
   return { protein, fat, carbs, calories: cals };
 }
 function calcMaintCalories(profile) {
