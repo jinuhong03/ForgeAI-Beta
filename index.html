@@ -211,7 +211,9 @@ const DEFAULT_PROFILE = {
   goalWeightLbs: "",
   targetDate: "",
   activityLevel: "moderate",
-  goal: "cut"
+  goal: "cut",
+  calorieAdjust: null
+  // null = use phase default; number = manual override
 };
 const ACTIVITY_MULTIPLIERS = {
   sedentary: 1.2,
@@ -314,7 +316,9 @@ function calcMacroTargets(profile) {
   const lbs = Number(profile.weightLbs);
   const phase = PHASE_CONFIGS[profile.goal] || PHASE_CONFIGS.cut;
   if (!tdee || !lbs) return MACRO_TARGETS_DEFAULT;
-  const cals = Math.max(1200, tdee + phase.calorieDelta);
+  const manualDelta = profile.calorieAdjust != null ? Number(profile.calorieAdjust) : null;
+  const delta = manualDelta != null ? -Math.abs(manualDelta) : phase.calorieDelta;
+  const cals = Math.max(1200, tdee + delta);
   const ratios = profile.sex === "male" ? phase.male : phase.female;
   const protein = Math.round(lbs * ratios.protein);
   const fat = Math.round(lbs * ratios.fat);
@@ -1210,7 +1214,29 @@ function ProfileTab({ profile, saveProfile }) {
     },
     /* @__PURE__ */ React.createElement("div", { className: "font-display text-sm" }, phase.emoji, " ", phase.label),
     /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted mt-0.5" }, phase.description)
-  )))), isComplete && tdee ? /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Your personalised targets \u2014 ", PHASE_CONFIGS[profile.goal || "cut"].label), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "TDEE (maintenance)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, tdee, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Cut target (\u2212500)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.calories, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "border-t border-line my-1.5" }), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Protein"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.protein, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Fat"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.fat, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Carbs"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.carbs, "g"))), profile.sex === "female" && /* @__PURE__ */ React.createElement("div", { className: "mt-3 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--steel-dim)" } }, "Female program active \u2014 a completely separate 7-day structure optimised for glute development and toning. Blue notes on exercises contain female-specific cues."), profile.goal && profile.goal !== "lean_bulk" && /* @__PURE__ */ React.createElement("div", { className: "mt-2 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--amber-dim)" } }, PHASE_CONFIGS[profile.goal].emoji, " ", PHASE_CONFIGS[profile.goal].label, " phase active \u2014 rep ranges and exercise notes are adjusted. Look for the amber notes in your workouts.")) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted text-center pt-2" }, "Fill in age, height, and body weight above to generate personalised targets."));
+  )))), /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Calorie adjustment"), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "font-body text-sm text-ink w-28 shrink-0" }, "Deficit / surplus"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "number",
+      inputMode: "numeric",
+      placeholder: `Default (${Math.abs(PHASE_CONFIGS[profile.goal || "cut"].calorieDelta)} kcal)`,
+      value: profile.calorieAdjust != null ? String(Math.abs(Number(profile.calorieAdjust))) : "",
+      onChange: (e) => {
+        const val = e.target.value;
+        saveProfile({ ...profile, calorieAdjust: val === "" ? null : Number(val) });
+      },
+      className: "flex-1 font-mono bg-surface2 border border-line rounded-lg px-2 py-1.5 text-sm text-ink"
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "font-body text-xs text-muted shrink-0" }, "kcal")), /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted" }, profile.goal === "cut" || !profile.goal ? "How many kcal below TDEE to eat. Default is 500. Increase to lose faster, decrease to lose slower." : profile.goal === "bulk" || profile.goal === "lean_bulk" ? "How many kcal above TDEE to eat. Default is " + Math.abs(PHASE_CONFIGS[profile.goal].calorieDelta) + ". Adjust to control rate of gain." : "Offset from TDEE. 0 = eat at maintenance."), profile.calorieAdjust != null && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick: () => saveProfile({ ...profile, calorieAdjust: null }),
+      className: "font-body text-xs text-muted underline"
+    },
+    "Reset to default (",
+    Math.abs(PHASE_CONFIGS[profile.goal || "cut"].calorieDelta),
+    " kcal)"
+  ))), isComplete && tdee ? /* @__PURE__ */ React.createElement(Card, null, /* @__PURE__ */ React.createElement(SectionLabel, null, "Your personalised targets \u2014 ", PHASE_CONFIGS[profile.goal || "cut"].label), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "TDEE (maintenance)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, tdee, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Cut target (\u2212500)"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.calories, " kcal")), /* @__PURE__ */ React.createElement("div", { className: "border-t border-line my-1.5" }), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Protein"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.protein, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Fat"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.fat, "g")), /* @__PURE__ */ React.createElement("div", { className: "flex justify-between font-mono text-sm" }, /* @__PURE__ */ React.createElement("span", { className: "text-muted" }, "Carbs"), /* @__PURE__ */ React.createElement("span", { className: "text-ink" }, macros.carbs, "g"))), profile.sex === "female" && /* @__PURE__ */ React.createElement("div", { className: "mt-3 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--steel-dim)" } }, "Female program active \u2014 a completely separate 7-day structure optimised for glute development and toning. Blue notes on exercises contain female-specific cues."), profile.goal && profile.goal !== "lean_bulk" && /* @__PURE__ */ React.createElement("div", { className: "mt-2 font-body text-xs text-muted leading-relaxed p-2.5 rounded-lg", style: { background: "var(--amber-dim)" } }, PHASE_CONFIGS[profile.goal].emoji, " ", PHASE_CONFIGS[profile.goal].label, " phase active \u2014 rep ranges and exercise notes are adjusted. Look for the amber notes in your workouts.")) : /* @__PURE__ */ React.createElement("div", { className: "font-body text-xs text-muted text-center pt-2" }, "Fill in age, height, and body weight above to generate personalised targets."));
 }
 function App() {
   const [loaded, setLoaded] = useState(false);
